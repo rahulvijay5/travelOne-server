@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  OWNER
+  MANAGER
+  CUSTOMER
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  phoneNumber String    @unique
+  role        Role      @default(CUSTOMER)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Groups owned by this user
+  ownedGroups     Group[]  @relation("GroupOwner")
+  // Groups where user is a manager
+  managedGroups   Group[]  @relation("GroupManagers")
+  // Groups where user is a member/customer
+  memberGroups    Group[]  @relation("GroupMembers")
+  // Todos created by this user
+  todos           Todo[]   @relation("TodoCreator")
+}
+
+model Group {
+  id        Int      @id @default(autoincrement())
+  name      String
+  owner     User     @relation("GroupOwner", fields: [ownerId], references: [id])
+  ownerId   Int
+  managers  User[]   @relation("GroupManagers")
+  members   User[]   @relation("GroupMembers")
+  todos     Todo[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  title     String
+  status    Boolean  @default(false)
+  group     Group    @relation(fields: [groupId], references: [id])
+  groupId   Int
+  creator   User     @relation("TodoCreator", fields: [creatorId], references: [id])
+  creatorId Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+} 
