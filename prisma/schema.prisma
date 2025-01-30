@@ -14,46 +14,133 @@ enum Role {
   CUSTOMER
 }
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
 model User {
-  id          Int       @id @default(autoincrement())
-  phoneNumber String    @unique
-  email       String    @unique
-  name        String
+  id          String    @id @default(uuid())
   clerkId     String    @unique
+  name        String
+  email       String    @unique
+  phoneNumber String    @unique
   role        Role      @default(CUSTOMER)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+
+  // Relations
+  ownedHotels     Hotel[]    @relation("HotelOwner")
+  managedHotels   Hotel[]    @relation("HotelManager")
+  bookings        Booking[]
+}
+
+model Hotel {
+  id          String    @id @default(uuid())
+  hotelName   String
+  description String
+  location    String    // Google Maps URL
+  address     String
+  totalRooms  Int
+  code        String    @unique
+  contactNumber String
+
+  // Hotel Rules
+  rules       HotelRules?
+
+  // Arrays
+  amenities   String[]
+  hotelImages String[]
+
+  // Relations
+  owner       User[]     @relation("HotelOwner")
+  managers    User[]     @relation("HotelManager")
+  rooms       Room[]
+  bookings    Booking[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model HotelRules {
+  id          String    @id @default(uuid())
+  hotel       Hotel     @relation(fields: [hotelId], references: [id])
+  hotelId     String    @unique
+
+  petsAllowed Boolean   @default(false)
+  maxPeopleInOneRoom Int
+  extraMattressOnAvailability Boolean @default(false)
+  parking     Boolean   @default(false)
+  swimmingPool Boolean  @default(false)
+  swimmingPoolTimings String?
+  ownRestaurant Boolean @default(false)
+  checkInTime  String
+  checkOutTime String
+  guestInfoNeeded Boolean @default(true)
+  smokingAllowed Boolean @default(false)
+  alcoholAllowed Boolean @default(false)
+  eventsAllowed Boolean @default(false)
+  minimumAgeForCheckIn Int @default(18)
+}
+
+model Room {
+  id          String    @id @default(uuid())
+  hotel       Hotel     @relation(fields: [hotelId], references: [id])
+  roomNumber  String    @default("101")
+  hotelId     String
+  type        String
+  price       Float
+  maxOccupancy Int
+  available   Boolean   @default(true)
+  features    String[]
+  images      String[]
+
+  // Relations
+  bookings    Booking[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Booking {
+  id          String    @id @default(uuid())
+  hotel       Hotel     @relation(fields: [hotelId], references: [id])
+  hotelId     String
+  room        Room      @relation(fields: [roomId], references: [id])
+  roomId      String
+  customer    User      @relation(fields: [customerId], references: [id])
+  customerId  String
+  checkIn     DateTime
+  checkOut    DateTime
+  guests      Int
+  status      BookingStatus @default(PENDING)
   
-  // Groups owned by this user
-  ownedGroups     Group[]  @relation("GroupOwner")
-  // Groups where user is a manager
-  managedGroups   Group[]  @relation("GroupManagers")
-  // Groups where user is a member/customer
-  memberGroups    Group[]  @relation("GroupMembers")
-  // Todos created by this user
-  todos           Todo[]   @relation("TodoCreator")
+  // Payment details
+  payment     Payment?
+
+  bookingTime DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
-model Group {
-  id        Int      @id @default(autoincrement())
-  name      String
-  owner     User     @relation("GroupOwner", fields: [ownerId], references: [id])
-  ownerId   Int
-  managers  User[]   @relation("GroupManagers")
-  members   User[]   @relation("GroupMembers")
-  todos     Todo[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Todo {
-  id        Int      @id @default(autoincrement())
-  title     String
-  status    Boolean  @default(false)
-  group     Group    @relation(fields: [groupId], references: [id])
-  groupId   Int
-  creator   User     @relation("TodoCreator", fields: [creatorId], references: [id])
-  creatorId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Payment {
+  id            String    @id @default(uuid())
+  booking       Booking   @relation(fields: [bookingId], references: [id])
+  bookingId     String    @unique
+  totalAmount   Float
+  paidAmount    Float
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 } 

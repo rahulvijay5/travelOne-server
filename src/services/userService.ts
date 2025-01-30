@@ -11,8 +11,14 @@ interface CreateUserData {
 
 export class UserService {
   async createUser(userData: CreateUserData): Promise<User> {
-    const existingUser = await prisma.user.findUnique({
-      where: { phoneNumber: userData.phoneNumber }
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { phoneNumber: userData.phoneNumber },
+          { email: userData.email },
+          { clerkId: userData.clerkId }
+        ]
+      }
     });
 
     if (existingUser) {
@@ -22,7 +28,7 @@ export class UserService {
     return prisma.user.create({
       data: {
         ...userData,
-        role: userData.role || 'CUSTOMER'
+        role: userData.role || Role.CUSTOMER
       }
     });
   }
@@ -39,24 +45,19 @@ export class UserService {
     });
   }
 
-  async getUserById(userId: string): Promise<User | null> {
-    return prisma.user.findUnique({
-      where: { clerkId: userId }
+  async getUserByClerkId(clerkId: string): Promise<User | null> {
+    console.log("FInding user in db by clerkId: ", clerkId);
+    const user = await prisma.user.findUnique({
+      where: { clerkId:clerkId }
     });
+    console.log("User found: ", user);
+    return user;
   }
 
-  async updateUserRole(clerkId:string,role:Role):Promise<boolean>{
-    const user = await prisma.user.update({
-      where:{
-        clerkId
-      },
-      data:{
-        role
-      }
-    })
-    if(!user){
-      throw new Error("User not found")
-    }
-    return true
+  async updateUserRole(clerkId: string, role: Role): Promise<User> {
+    return prisma.user.update({
+      where: { clerkId: clerkId },
+      data: { role }
+    });
   }
 } 

@@ -1,0 +1,96 @@
+{
+  "hotels": [
+    {
+      "hotelId": "1234",
+      "hotelName": "Sunset Paradise Hotel",
+      "description": "A luxurious hotel with breathtaking views of the sunset, offering world-class amenities and exceptional hospitality.",
+      "location": "https://maps.app.goo.gl/san6xjr1mabGLsx59",
+      "address": "123, Main Road, Jaipur, Rajasthan, India",
+      "totalRooms": 26,
+      "code": "a43j",
+      "owner": ["1"],
+      "managers": ["2"],
+      "rules": {
+        "petsAllowed": true,
+        "maxPeopleInOneRoom": 3,
+        "extraMattressOnAvailability": true,
+        "parking": true,
+        "swimmingPool": true,
+        "swimmingPoolTimings": "6:00 AM - 8:00 PM",
+        "ownRestaurant": true,
+        "checkInTime": "11:00",
+        "checkOutTime": "10:00",
+        "guestInfoNeeded": true,
+        "smokingAllowed": false,
+        "alcoholAllowed": true,
+        "eventsAllowed": true,
+        "minimumAgeForCheckIn": 18
+      },
+      "amenities": [
+        "Free WiFi",
+        "Gym",
+        "Spa",
+        "Room Service",
+        "Airport Pickup"
+      ],
+      "hotelImages": [
+        "https://images.unsplash.com/photo-1517840901100-8179e982acb7?q=80&w=2940&auto=format&fit=crop",
+        "https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=2940&auto=format&fit=crop"
+      ],
+      "contactNumber": "+91-9876543210"
+    }
+  ],
+  "rooms": [
+    {
+      "roomId": "r101",
+      "hotelId": "1234",
+      "name": "Luxury Suite",
+      "type": "Suite",
+      "price": 5000,
+      "maxOccupancy": 3,
+      "available": true,
+      "features": ["AC", "TV", "Balcony", "Bathtub"],
+      "images": [
+        "https://images.unsplash.com/photo-1541971875076-8f970d573be6?q=80&w=3174&auto=format&fit=crop"
+      ]
+    },
+    {
+      "roomId": "r102",
+      "hotelId": "1234",
+      "name": "Deluxe Room",
+      "type": "Double",
+      "price": 3000,
+      "maxOccupancy": 2,
+      "available": false,
+      "features": ["AC", "TV", "Mini-Fridge"],
+      "images": [
+        "https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=3132&auto=format&fit=crop"
+      ]
+    }
+  ],
+  "bookings": [
+    {
+      "bookingId": "b789",
+      "hotelId": "1234",
+      "roomId": "r102",
+      "customer": {
+        "userId": 3,
+        "name": "Ankit Sharma",
+        "phone": "8886543210",
+        "email": "ankit.sharma@gmail.com",
+        "role": "CUSTOMER"
+      },
+      "checkIn": "2024-08-25",
+      "checkOut": "2024-08-28",
+      "guests": 2,
+      "status": "CONFIRMED",
+      "payment": {
+        "totalAmount": 9000,
+        "paidAmount": 9000,
+        "status": "PAID",
+        "transactionId": "txn5678"
+      },
+      "bookingTime": "2024-08-20T15:30:00Z"
+    }
+  ]
+}

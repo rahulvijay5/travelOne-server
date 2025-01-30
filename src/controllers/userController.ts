@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserService } from "../services/userService";
 import { clerkClient } from "@clerk/express";
+import { Role } from "@prisma/client";
 
 const userService = new UserService();
 
@@ -20,6 +21,7 @@ export const createUser = async (
     console.log("New user created: ", user);
     res.json(user);
   } catch (error) {
+    console.error("Error creating user:", error);
     if (error instanceof Error && error.message === "User already exists") {
       res.status(400).json({ error: error.message });
     } else {
@@ -34,13 +36,11 @@ export const searchUsers = async (
 ): Promise<void> => {
   try {
     const { query } = req.query;
-    console.log("Query: ", query);
     if (!query || typeof query !== "string") {
       res.status(400).json({ error: "Search query is required" });
       return;
     }
     const users = await userService.searchUsers(query);
-    console.log("Users: ", users);
     res.json(users);
   } catch (error) {
     console.error("Error searching users:", error);
@@ -48,14 +48,15 @@ export const searchUsers = async (
   }
 };
 
-export const getUserById = async (
+export const getUserByClerkId = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const { userId } = req.params;
-    const user = await userService.getUserById(userId);
+    const { clerkId } = req.params;
+    const user = await userService.getUserByClerkId(clerkId);
 
+    console.log("User found: ", user);
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
@@ -63,8 +64,8 @@ export const getUserById = async (
 
     res.json(user);
   } catch (error) {
-    console.error("Error fetching user details:", error);
-    res.status(500).json({ error: "Error fetching user details" });
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Error fetching user" });
   }
 };
 
@@ -74,19 +75,23 @@ export const updateUserRole = async (
 ): Promise<void> => {
   try {
     const { role, clerkId } = req.body;
-    await clerkClient.users.updateUserMetadata(clerkId, {
-      publicMetadata: {
-        role,
-      },
-    });
-    const updateUserRole = await userService.updateUserRole(clerkId, role);
-    console.log(updateUserRole)
-    if (!updateUserRole) {
-      res.status(400).json({ error: "Error updating user role" });
+    
+    // Update role in Clerk
+    try {
+      await clerkClient.users.updateUserMetadata(clerkId, {
+        publicMetadata: {
+          role,
+        },
+      });
+    } catch (clerkError) {
+      console.error("Error updating Clerk metadata:", clerkError);
+      res.status(400).json({ error: "Error updating Clerk user metadata" });
       return;
-    }else{
-      res.status(200).json({ success: true });
     }
+
+    // Update role in our database
+    const updatedUser = await userService.updateUserRole(clerkId, role);
+    res.json(updatedUser);
   } catch (error) {
     console.error("Error updating user role:", error);
     res.status(500).json({ error: "Error updating user role" });
