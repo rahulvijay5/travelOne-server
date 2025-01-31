@@ -1,50 +1,10 @@
+import { CreateHotelData, HotelRulesData, UpdateHotelData } from '@/types';
 import prisma from '../config/database';
 import { Hotel, HotelRules } from '@prisma/client';
 
-interface CreateHotelData {
-  hotelName: string;
-  description: string;
-  location: string;
-  address: string;
-  totalRooms: number;
-  code: string;
-  contactNumber: string;
-  amenities: string[];
-  hotelImages: string[];
-  owner: string;
-}
-
-interface UpdateHotelData {
-  hotelName?: string;
-  description?: string;
-  location?: string;
-  address?: string;
-  totalRooms?: number;
-  contactNumber?: string;
-  amenities?: string[];
-  hotelImages?: string[];
-}
-
-interface HotelRulesData {
-  petsAllowed: boolean;
-  maxPeopleInOneRoom: number;
-  extraMattressOnAvailability: boolean;
-  parking: boolean;
-  swimmingPool: boolean;
-  swimmingPoolTimings: string | null;
-  ownRestaurant: boolean;
-  checkInTime: string;
-  checkOutTime: string;
-  guestInfoNeeded: boolean;
-  smokingAllowed: boolean;
-  alcoholAllowed: boolean;
-  eventsAllowed: boolean;
-  minimumAgeForCheckIn: number;
-}
-
 export class HotelService {
   async generateRandomCode() {
-    const characters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
     let randomCode = '';
     for (let i = 0; i < 4; i++) {
       const randomIndex = Math.floor(Math.random() * characters.length);

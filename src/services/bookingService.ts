@@ -1,34 +1,6 @@
 import prisma from '../config/database';
 import { Booking, BookingStatus, Payment, PaymentStatus } from '@prisma/client';
-
-interface CreateBookingData {
-  hotelId: string;
-  roomId: string;
-  customerId: string;
-  checkIn: Date;
-  checkOut: Date;
-  guests: number;
-  payment?: {
-    totalAmount: number;
-    paidAmount: number;
-    status?: PaymentStatus;
-    transactionId?: string;
-  };
-}
-
-interface UpdateBookingData {
-  checkIn?: Date;
-  checkOut?: Date;
-  guests?: number;
-  status?: BookingStatus;
-}
-
-interface UpdatePaymentData {
-  status: PaymentStatus;
-  paidAmount?: number;
-  transactionId?: string;
-}
-
+import { CreateBookingData, UpdateBookingData, UpdatePaymentData } from '@/types';
 export class BookingService {
   async createBooking(data: CreateBookingData): Promise<Booking> {
     // Check if room is available for the given dates

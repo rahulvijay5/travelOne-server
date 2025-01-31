@@ -1,13 +1,6 @@
+import { CreateUserData } from '@/types';
 import prisma from '../config/database';
 import { Role, User } from '@prisma/client';
-
-interface CreateUserData {
-  phoneNumber: string;
-  email: string;
-  name: string;
-  clerkId: string;
-  role?: Role;
-}
 
 export class UserService {
   async createUser(userData: CreateUserData): Promise<User> {

@@ -1,24 +1,6 @@
 import prisma from '../config/database';
 import { Room } from '@prisma/client';
-
-interface CreateRoomData {
-  hotelId: string;
-  name: string;
-  type: string;
-  price: number;
-  maxOccupancy: number;
-  features: string[];
-  images: string[];
-}
-
-interface UpdateRoomData {
-  name?: string;
-  type?: string;
-  price?: number;
-  maxOccupancy?: number;
-  features?: string[];
-  images?: string[];
-}
+import { CreateRoomData, UpdateRoomData } from '@/types';
 
 export class RoomService {
   async createRoom(data: CreateRoomData): Promise<Room> {

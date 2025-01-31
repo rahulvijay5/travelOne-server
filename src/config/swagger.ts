@@ -18,6 +18,12 @@ const options = {
         description: 'Development server'
       }
     ],
+    tags: [
+      {
+        name: 'Images',
+        description: 'Image upload and management endpoints'
+      }
+    ],
     components: {
       securitySchemes: {
         BearerAuth: {
