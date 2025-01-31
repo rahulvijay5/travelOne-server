@@ -1,11 +1,11 @@
-import { CreateHotelData, HotelRulesData, UpdateHotelData } from '@/types';
-import prisma from '../config/database';
-import { Hotel, HotelRules } from '@prisma/client';
+import { CreateHotelData, HotelRulesData, UpdateHotelData } from "@/types";
+import prisma from "../config/database";
+import { Hotel, HotelRules, User } from "@prisma/client";
 
 export class HotelService {
   async generateRandomCode() {
-    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let randomCode = '';
+    const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+    let randomCode = "";
     for (let i = 0; i < 4; i++) {
       const randomIndex = Math.floor(Math.random() * characters.length);
       randomCode += characters[randomIndex];
@@ -15,7 +15,7 @@ export class HotelService {
 
   async checkIfHotelCodeExists(code: string): Promise<boolean> {
     const existingHotel = await prisma.hotel.findUnique({
-      where: { code: code }
+      where: { code: code },
     });
     return existingHotel ? true : false;
   }
@@ -38,14 +38,14 @@ export class HotelService {
         ...data,
         code: randomCode,
         owner: {
-          connect: { id: data.owner }
-        }
+          connect: { id: data.owner },
+        },
       },
       include: {
         owner: true,
         managers: false,
-        rules: false
-      }
+        rules: false,
+      },
     });
   }
 
@@ -56,9 +56,22 @@ export class HotelService {
         owner: true,
         managers: true,
         rules: true,
-        rooms: true
-      }
+        rooms: true,
+      },
     });
+  }
+
+  async getHotelsByOwnerId(ownerId: string): Promise<Hotel[] | null> {
+    const hotels = await prisma.user.findUnique({
+      where: { id: ownerId },
+      include: {
+        ownedHotels: true,
+      },
+    });
+    if (!hotels) {
+      return null;
+    }
+    return hotels.ownedHotels;
   }
 
   async updateHotel(hotelId: string, data: UpdateHotelData): Promise<Hotel> {
@@ -68,14 +81,14 @@ export class HotelService {
       include: {
         owner: true,
         managers: true,
-        rules: true
-      }
+        rules: true,
+      },
     });
   }
 
   async deleteHotel(hotelId: string): Promise<void> {
     await prisma.hotel.delete({
-      where: { id: hotelId }
+      where: { id: hotelId },
     });
   }
 
@@ -84,8 +97,8 @@ export class HotelService {
       include: {
         owner: true,
         managers: true,
-        rules: true
-      }
+        rules: true,
+      },
     });
   }
 
@@ -93,16 +106,16 @@ export class HotelService {
     return prisma.hotel.findMany({
       where: {
         OR: [
-          { hotelName: { contains: query, mode: 'insensitive' } },
-          { description: { contains: query, mode: 'insensitive' } },
-          { address: { contains: query, mode: 'insensitive' } }
-        ]
+          { hotelName: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
+          { address: { contains: query, mode: "insensitive" } },
+        ],
       },
       include: {
         owner: true,
         managers: true,
-        rules: true
-      }
+        rules: true,
+      },
     });
   }
 
@@ -111,14 +124,27 @@ export class HotelService {
       where: { id: hotelId },
       data: {
         managers: {
-          connect: { id: managerId }
-        }
+          connect: { id: managerId },
+        },
       },
       include: {
         owner: true,
-        managers: true
-      }
+        managers: true,
+      },
     });
+  }
+
+  async getAllManagersOfHotel(hotelId: string): Promise<User[]> {
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: hotelId },
+      include: {
+        managers: true,
+      },
+    });
+    if (!hotel) {
+      return [];
+    }
+    return hotel.managers;
   }
 
   async removeManager(hotelId: string, managerId: string): Promise<Hotel> {
@@ -126,25 +152,28 @@ export class HotelService {
       where: { id: hotelId },
       data: {
         managers: {
-          disconnect: { id: managerId }
-        }
+          disconnect: { id: managerId },
+        },
       },
       include: {
         owner: true,
-        managers: true
-      }
+        managers: true,
+      },
     });
   }
 
-  async updateHotelRules(hotelId: string, rulesData: Partial<HotelRulesData>): Promise<HotelRules> {
+  async updateHotelRules(
+    hotelId: string,
+    rulesData: Partial<HotelRulesData>
+  ): Promise<HotelRules> {
     const existingRules = await prisma.hotelRules.findUnique({
-      where: { hotelId }
+      where: { hotelId },
     });
 
     if (existingRules) {
       return prisma.hotelRules.update({
         where: { hotelId },
-        data: rulesData
+        data: rulesData,
       });
     } else {
       return prisma.hotelRules.create({
@@ -153,7 +182,8 @@ export class HotelService {
           hotelId,
           petsAllowed: rulesData.petsAllowed ?? false,
           maxPeopleInOneRoom: rulesData.maxPeopleInOneRoom ?? 2,
-          extraMattressOnAvailability: rulesData.extraMattressOnAvailability ?? false,
+          extraMattressOnAvailability:
+            rulesData.extraMattressOnAvailability ?? false,
           parking: rulesData.parking ?? false,
           swimmingPool: rulesData.swimmingPool ?? false,
           ownRestaurant: rulesData.ownRestaurant ?? false,
@@ -163,9 +193,9 @@ export class HotelService {
           smokingAllowed: rulesData.smokingAllowed ?? false,
           alcoholAllowed: rulesData.alcoholAllowed ?? false,
           eventsAllowed: rulesData.eventsAllowed ?? false,
-          minimumAgeForCheckIn: rulesData.minimumAgeForCheckIn ?? 18
-        }
+          minimumAgeForCheckIn: rulesData.minimumAgeForCheckIn ?? 18,
+        },
       });
     }
   }
-} 
+}

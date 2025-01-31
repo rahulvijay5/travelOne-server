@@ -37,6 +37,26 @@ export const getHotelById = async (
   }
 };
 
+export const getHotelsByOwnerId = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { ownerId } = req.params;
+    const hotel = await hotelService.getHotelsByOwnerId(ownerId);
+    
+    if (!hotel) {
+      res.status(404).json({ error: "Hotels not found" });
+      return;
+    }
+
+    res.json(hotel);
+  } catch (error) {
+    console.error("Error fetching hotels:", error);
+    res.status(500).json({ error: "Error fetching hotels" });
+  }
+};
+
 export const updateHotel = async (
   req: Request,
   res: Response
@@ -125,6 +145,20 @@ export const removeManager = async (
   try {
     const { hotelId, managerId } = req.params;
     const hotel = await hotelService.removeManager(hotelId, managerId);
+    res.json(hotel);
+  } catch (error) {
+    console.error("Error removing manager:", error);
+    res.status(500).json({ error: "Error removing manager from hotel" });
+  }
+};
+
+export const getAllManagersOfHotel = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hotelId } = req.params;
+    const hotel = await hotelService.getAllManagersOfHotel(hotelId);
     res.json(hotel);
   } catch (error) {
     console.error("Error removing manager:", error);

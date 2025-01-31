@@ -9,7 +9,9 @@ import {
   searchHotels,
   addManager,
   removeManager,
-  updateHotelRules
+  updateHotelRules,
+  getHotelsByOwnerId,
+  getAllManagersOfHotel
 } from '../controllers/hotelController';
 
 const router = express.Router();
@@ -145,6 +147,33 @@ router.get('/search', searchHotels);
  *         description: Hotel not found
  */
 router.get('/:hotelId', getHotelById);
+
+/**
+ * @swagger
+ * /api/hotels/owner/{ownerId}:
+ *   get:
+ *     summary: Get hotels by owner ID
+ *     tags: [Hotels]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: ownerId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the owner
+ *     responses:
+ *       200:
+ *         description: Hotel details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Hotel'
+ *       404:
+ *         description: Hotel not found
+ */
+router.get('/owner/:ownerId', getHotelsByOwnerId);
 
 /**
  * @swagger
@@ -287,6 +316,27 @@ router.put('/:hotelId/rules', updateHotelRules);
  *         description: Manager added successfully
  */
 router.post('/:hotelId/managers', addManager);
+
+/**
+ * @swagger
+ * /api/hotels/{hotelId}/managers:
+ *   get:
+ *     summary: Get all managers of hotel
+ *     tags: [Hotels]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hotelId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the hotel
+ *     responses:
+ *       200:
+ *         description: List of managers
+ */
+router.get('/:hotelId/managers', getAllManagersOfHotel);
 
 /**
  * @swagger
