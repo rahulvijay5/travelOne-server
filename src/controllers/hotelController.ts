@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { HotelService } from "../services/hotelService";
+import { clerkClient } from "@clerk/express";
 
 const hotelService = new HotelService();
 
@@ -123,6 +124,30 @@ export const searchHotels = async (
   }
 };
 
+export const getHotelByCode = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { code } = req.body;
+    if (!code || typeof code !== "string") {
+      res.status(400).json({ error: "Hotel code is required" });
+      return;
+    }
+
+    const hotel = await hotelService.getHotelByCode(code);
+    if (!hotel) {
+      res.status(404).json({ error: "Hotel not found" });
+      return;
+    }
+
+    res.json(hotel);
+  } catch (error) {
+    console.error("Error fetching hotel:", error);
+    res.status(500).json({ error: "Error fetching hotel" });
+  }
+};
+
 export const addManager = async (
   req: Request,
   res: Response
@@ -130,11 +155,29 @@ export const addManager = async (
   try {
     const { hotelId } = req.params;
     const { managerId } = req.body;
-    const hotel = await hotelService.addManager(hotelId, managerId);
+    const { hotel, clerkId } = await hotelService.addManager(hotelId, managerId);
+
+    // Update role in Clerk
+    await clerkClient.users.updateUserMetadata(clerkId, {
+      publicMetadata: {
+        role: 'MANAGER',
+      },
+    });
+
     res.json(hotel);
   } catch (error) {
     console.error("Error adding manager:", error);
-    res.status(500).json({ error: "Error adding manager to hotel" });
+    if (error instanceof Error) {
+      if (error.message === 'User not found') {
+        res.status(404).json({ error: "User not found" });
+      } else if (error.message === 'User is already a manager or owner') {
+        res.status(400).json({ error: "User is already a manager or owner" });
+      } else {
+        res.status(500).json({ error: "Error adding manager to hotel" });
+      }
+    } else {
+      res.status(500).json({ error: "Error adding manager to hotel" });
+    }
   }
 };
 
@@ -144,7 +187,17 @@ export const removeManager = async (
 ): Promise<void> => {
   try {
     const { hotelId, managerId } = req.params;
-    const hotel = await hotelService.removeManager(hotelId, managerId);
+    const { hotel, clerkId } = await hotelService.removeManager(hotelId, managerId);
+
+    // Update role in Clerk if the user's role was changed back to CUSTOMER
+    if (clerkId) {
+      await clerkClient.users.updateUserMetadata(clerkId, {
+        publicMetadata: {
+          role: 'CUSTOMER',
+        },
+      });
+    }
+
     res.json(hotel);
   } catch (error) {
     console.error("Error removing manager:", error);

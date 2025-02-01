@@ -11,12 +11,15 @@ import {
   removeManager,
   updateHotelRules,
   getHotelsByOwnerId,
-  getAllManagersOfHotel
+  getAllManagersOfHotel,
+  getHotelByCode
 } from '../controllers/hotelController';
 
 const router = express.Router();
 
-// All routes are protected
+// All routes are protected except getHotelByCode
+router.post('/code', getHotelByCode);
+
 router.use(requireAuth());
 
 /**
@@ -313,7 +316,11 @@ router.put('/:hotelId/rules', updateHotelRules);
  *                 type: string
  *     responses:
  *       200:
- *         description: Manager added successfully
+ *         description: Manager added successfully and role updated
+ *       400:
+ *         description: User is already a manager or owner
+ *       404:
+ *         description: User not found
  */
 router.post('/:hotelId/managers', addManager);
 
@@ -340,6 +347,30 @@ router.get('/:hotelId/managers', getAllManagersOfHotel);
 
 /**
  * @swagger
+ * /api/hotels/code:
+ *   post:
+ *     summary: Get hotel details by code
+ *     tags: [Hotels]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Hotel details retrieved successfully
+ *       404:
+ *         description: Hotel not found
+ */
+
+/**
+ * @swagger
  * /api/hotels/{hotelId}/managers/{managerId}:
  *   delete:
  *     summary: Remove a manager from hotel
@@ -361,7 +392,7 @@ router.get('/:hotelId/managers', getAllManagersOfHotel);
  *         description: ID of the manager
  *     responses:
  *       200:
- *         description: Manager removed successfully
+ *         description: Manager removed successfully and role updated if necessary
  */
 router.delete('/:hotelId/managers/:managerId', removeManager);
 

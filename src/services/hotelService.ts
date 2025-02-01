@@ -4,7 +4,7 @@ import { Hotel, HotelRules, User } from "@prisma/client";
 
 export class HotelService {
   async generateRandomCode() {
-    const characters = "abcdefghijklmnopqrstuvwxyz0123456789";
+    const characters = "abcdefghijklmnopqrstuvwxyz";
     let randomCode = "";
     for (let i = 0; i < 4; i++) {
       const randomIndex = Math.floor(Math.random() * characters.length);
@@ -38,6 +38,9 @@ export class HotelService {
         ...data,
         code: randomCode,
         owner: {
+          connect: { id: data.owner },
+        },
+        managers: {
           connect: { id: data.owner },
         },
       },
@@ -119,8 +122,56 @@ export class HotelService {
     });
   }
 
-  async addManager(hotelId: string, managerId: string): Promise<Hotel> {
-    return prisma.hotel.update({
+  async getHotelByCode(code: string): Promise<Hotel | null> {
+    return prisma.hotel.findUnique({
+      where: { code },
+      include: {
+        managers: {
+          select: {
+            name: true,
+            // email: true,
+          }
+        },
+        rules: true,
+        // rooms:{
+        //   select: {
+        //     id: true,
+        //     type: true,
+        //     images: true,
+        //     price: true,
+        //     maxOccupancy: true,
+        //     features: true,
+        //     roomNumber: true,
+        //   }
+        // }
+      }
+    });
+  }
+
+  async addManager(hotelId: string, managerId: string): Promise<{ hotel: Hotel; clerkId: string }> {
+    // Check user's current role
+    const user = await prisma.user.findUnique({
+      where: { id: managerId },
+      include: {
+        managedHotels: true
+      }
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.role === 'MANAGER' || user.role === 'OWNER') {
+      throw new Error('User is already a manager or owner');
+    }
+
+    // Update user's role to MANAGER and add them to hotel
+    await prisma.user.update({
+      where: { id: managerId },
+      data: { role: 'MANAGER' }
+    });
+
+    const updatedHotel = await prisma.hotel.update({
       where: { id: hotelId },
       data: {
         managers: {
@@ -132,6 +183,8 @@ export class HotelService {
         managers: true,
       },
     });
+
+    return { hotel: updatedHotel, clerkId: user.clerkId };
   }
 
   async getAllManagersOfHotel(hotelId: string): Promise<User[]> {
@@ -147,8 +200,9 @@ export class HotelService {
     return hotel.managers;
   }
 
-  async removeManager(hotelId: string, managerId: string): Promise<Hotel> {
-    return prisma.hotel.update({
+  async removeManager(hotelId: string, managerId: string): Promise<{ hotel: Hotel; clerkId: string | null }> {
+    // First remove the manager from the hotel
+    const updatedHotel = await prisma.hotel.update({
       where: { id: hotelId },
       data: {
         managers: {
@@ -160,6 +214,25 @@ export class HotelService {
         managers: true,
       },
     });
+
+    // Check if the user manages any other hotels
+    const user = await prisma.user.findUnique({
+      where: { id: managerId },
+      include: {
+        managedHotels: true
+      }
+    });
+
+    if (user && user.managedHotels.length === 0) {
+      // If they don't manage any other hotels, change role back to CUSTOMER
+      await prisma.user.update({
+        where: { id: managerId },
+        data: { role: 'CUSTOMER' }
+      });
+      return { hotel: updatedHotel, clerkId: user.clerkId };
+    }
+
+    return { hotel: updatedHotel, clerkId: null };
   }
 
   async updateHotelRules(
