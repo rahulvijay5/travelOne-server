@@ -6,10 +6,44 @@ import {
   updateRoom,
   deleteRoom,
   getHotelRooms,
-  updateRoomAvailability
+  getHotelRoomsByStatus,
+  updateRoomStatus
 } from '../controllers/roomController';
 
 const router = express.Router();
+
+/**
+ * @swagger
+ * /api/rooms/hotel/{hotelId}/{roomStatus}:
+ *   get:
+ *     summary: Get all rooms of a hotel by status
+ *     tags: [Rooms]
+ *     parameters:
+ *       - in: path
+ *         name: hotelId
+ *         schema:
+ *           type: string
+ *         required: true
+  *         description: ID of the hotel
+ *       - in: path
+ *         name: roomStatus
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Status of the room
+ *     responses:
+ *       200:
+ *         description: List of rooms in the hotel with the given status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Room'
+ *       404:
+ *         description: Rooms not found
+ */
+router.get('/hotel/:hotelId/:roomStatus', getHotelRoomsByStatus);
 
 // All routes are protected
 router.use(requireAuth());
@@ -177,9 +211,9 @@ router.delete('/:roomId', deleteRoom);
 
 /**
  * @swagger
- * /api/rooms/{roomId}/availability:
+ * /api/rooms/{roomId}/status:
  *   patch:
- *     summary: Update room availability
+ *     summary: Update room status
  *     tags: [Rooms]
  *     security:
  *       - BearerAuth: []
@@ -211,6 +245,6 @@ router.delete('/:roomId', deleteRoom);
  *       404:
  *         description: Room not found
  */
-router.patch('/:roomId/availability', updateRoomAvailability);
+router.patch('/:roomId/status', updateRoomStatus);
 
 export default router; 

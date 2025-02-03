@@ -45,13 +45,14 @@ export const getHotelsByOwnerId = async (
   try {
     const { ownerId } = req.params;
     const hotel = await hotelService.getHotelsByOwnerId(ownerId);
+    console.log(hotel);
     
     if (!hotel) {
       res.status(404).json({ error: "Hotels not found" });
       return;
     }
 
-    res.json(hotel);
+    res.status(200).json(hotel);
   } catch (error) {
     console.error("Error fetching hotels:", error);
     res.status(500).json({ error: "Error fetching hotels" });
@@ -99,7 +100,7 @@ export const getAllHotels = async (
 ): Promise<void> => {
   try {
     const hotels = await hotelService.getAllHotels();
-    res.json(hotels);
+    res.status(200).json(hotels);
   } catch (error) {
     console.error("Error fetching hotels:", error);
     res.status(500).json({ error: "Error fetching hotels" });
@@ -117,7 +118,7 @@ export const searchHotels = async (
       return;
     }
     const hotels = await hotelService.searchHotels(query);
-    res.json(hotels);
+    res.status(200).json(hotels);
   } catch (error) {
     console.error("Error searching hotels:", error);
     res.status(500).json({ error: "Error searching hotels" });
@@ -129,7 +130,7 @@ export const getHotelByCode = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { code } = req.body;
+    const code = req.params.code;
     if (!code || typeof code !== "string") {
       res.status(400).json({ error: "Hotel code is required" });
       return;
@@ -141,7 +142,7 @@ export const getHotelByCode = async (
       return;
     }
 
-    res.json(hotel);
+    res.status(200).json(hotel);
   } catch (error) {
     console.error("Error fetching hotel:", error);
     res.status(500).json({ error: "Error fetching hotel" });

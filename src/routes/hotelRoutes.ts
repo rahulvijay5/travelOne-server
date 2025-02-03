@@ -18,7 +18,7 @@ import {
 const router = express.Router();
 
 // All routes are protected except getHotelByCode
-router.post('/code', getHotelByCode);
+router.get('/code/:code', getHotelByCode);
 
 router.use(requireAuth());
 
@@ -347,21 +347,17 @@ router.get('/:hotelId/managers', getAllManagersOfHotel);
 
 /**
  * @swagger
- * /api/hotels/code:
- *   post:
+ * /api/hotels/code/{code}:
+ *   get:
  *     summary: Get hotel details by code
  *     tags: [Hotels]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - code
- *             properties:
- *               code:
- *                 type: string
+ *     parameters:
+ *       - in: path
+ *         name: code
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Code of the hotel
  *     responses:
  *       200:
  *         description: Hotel details retrieved successfully

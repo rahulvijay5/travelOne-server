@@ -1,5 +1,5 @@
 import prisma from '../config/database';
-import { Room } from '@prisma/client';
+import { Room, RoomStatus } from '@prisma/client';
 import { CreateRoomData, UpdateRoomData } from '@/types';
 
 export class RoomService {
@@ -52,21 +52,27 @@ export class RoomService {
   async getHotelRooms(hotelId: string): Promise<Room[]> {
     return prisma.room.findMany({
       where: { hotelId },
-      include: {
-        bookings: {
-          include: {
-            customer: true,
-            payment: true
-          }
-        }
-      }
+      // include: {
+      //   bookings: {
+      //     include: {
+      //       customer: true,
+      //       payment: true
+      //     }
+      //   }
+      // }
     });
   }
 
-  async updateRoomAvailability(roomId: string, available: boolean): Promise<Room> {
+  async getHotelRoomsByStatus(hotelId: string, roomStatus: RoomStatus): Promise<Room[]> {
+    return prisma.room.findMany({
+      where: { hotelId, roomStatus }
+    });
+  }
+
+  async updateRoomStatus(roomId: string, roomStatus: RoomStatus): Promise<Room> {
     return prisma.room.update({
       where: { id: roomId },
-      data: { available }
+      data: { roomStatus }
     });
   }
 } 

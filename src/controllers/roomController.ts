@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { RoomService } from "../services/roomService";
+import { RoomStatus } from "@prisma/client";
 
 const roomService = new RoomService();
 
@@ -80,36 +81,62 @@ export const getHotelRooms = async (
   try {
     const { hotelId } = req.params;
     const rooms = await roomService.getHotelRooms(hotelId);
-    res.json(rooms);
+
+    if (!rooms) {
+      res.status(404).json({ error: "Rooms not found" });
+      return;
+    }
+
+    res.status(200).json(rooms);
   } catch (error) {
     console.error("Error fetching hotel rooms:", error);
     res.status(500).json({ error: "Error fetching hotel rooms" });
   }
 };
 
-export const updateRoomAvailability = async (
+export const getHotelRoomsByStatus = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hotelId, roomStatus } = req.params;
+    const rooms = await roomService.getHotelRoomsByStatus(hotelId, roomStatus as RoomStatus);
+    
+    if (!rooms) {
+      res.status(404).json({ error: "Rooms not found" });
+      return;
+    }
+
+    res.status(200).json(rooms);
+  } catch (error) {
+    console.error("Error fetching hotel rooms by status:", error);
+    res.status(500).json({ error: "Error fetching hotel rooms by status" });
+  }
+};
+
+export const updateRoomStatus = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
     const { roomId } = req.params;
-    const { available } = req.body;
+    const { roomStatus } = req.body;
     
-    if (typeof available !== 'boolean') {
-      res.status(400).json({ error: "Available status must be a boolean" });
+    if (!Object.values(RoomStatus).includes(roomStatus as RoomStatus)) {
+      res.status(400).json({ error: "Room status must be a valid RoomStatus" });
       return;
     }
 
-    const room = await roomService.updateRoomAvailability(roomId, available);
+    const room = await roomService.updateRoomStatus(roomId, roomStatus as RoomStatus);
     
     if (!room) {
       res.status(404).json({ error: "Room not found" });
       return;
     }
 
-    res.json(room);
+    res.status(200).json(room);
   } catch (error) {
-    console.error("Error updating room availability:", error);
-    res.status(500).json({ error: "Error updating room availability" });
+    console.error("Error updating room status:", error);
+    res.status(500).json({ error: "Error updating room status" });
   }
 }; 

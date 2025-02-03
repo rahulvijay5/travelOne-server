@@ -7,7 +7,8 @@ import {
   cancelBooking,
   getUserBookings,
   getHotelBookings,
-  updatePaymentStatus
+  updatePaymentStatus,
+  getHotelBookingsByStatus
 } from '../controllers/bookingController';
 
 const router = express.Router();
@@ -51,6 +52,9 @@ router.use(requireAuth());
  *                 format: date-time
  *               guests:
  *                 type: integer
+ *               status:
+ *                 type: string
+ *                 enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
  *               payment:
  *                 type: object
  *                 properties:
@@ -119,6 +123,40 @@ router.get('/user', getUserBookings);
  *                 $ref: '#/components/schemas/Booking'
  */
 router.get('/hotel/:hotelId', getHotelBookings);
+
+
+/**
+ * @swagger
+ * /api/bookings/{hotelId}/{status}:
+ *   get:
+ *     summary: Get all bookings of a hotel by status
+ *     tags: [Bookings]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hotelId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the hotel
+ *       - in: path
+ *         name: status
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Status of the bookings
+ *     responses:
+ *       200:
+ *         description: List of hotel's bookings by status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Booking'
+ */
+router.get('/:hotelId/:status', getHotelBookingsByStatus);
 
 /**
  * @swagger

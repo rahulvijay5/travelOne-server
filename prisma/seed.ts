@@ -1,74 +1,70 @@
-import { PrismaClient, Role, BookingStatus, PaymentStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  // Create sample users
-  const owner = await prisma.user.create({
+async function createDummyData() {
+  // 1. Create Users (owner, manager, and customer)
+  const user1 = await prisma.user.create({
     data: {
-      clerkId: "user_2NNEqL3CricW9Fz",
-      name: "John Doe",
-      email: "john.doe@example.com",
-      phoneNumber: "+91-9876543210",
-      role: Role.OWNER,
+      clerkId: 'user_2sKyE39pd606qSq9GZU8ee5UCLz',
+      name: 'Sample User',
+      email: 'sampleuser@example.com',
+      phoneNumber: '9252993111',
+      role: 'CUSTOMER',
     },
   });
 
-  const manager = await prisma.user.create({
+  const user2 = await prisma.user.create({
     data: {
-      clerkId: "user_2MMEqL3CricW9Fy",
-      name: "Jane Smith",
-      email: "jane.smith@example.com",
-      phoneNumber: "+91-9876543211",
-      role: Role.MANAGER,
+      clerkId: 'manager-001',
+      name: 'Jane Smith',
+      email: 'janesmith@example.com',
+      phoneNumber: '0987654321',
+      role: 'MANAGER',
     },
   });
 
-  const customer = await prisma.user.create({
+  const user3 = await prisma.user.create({
     data: {
-      clerkId: "user_2KKEqL3CricW9Fx",
-      name: "Ankit Sharma",
-      email: "ankit.sharma@gmail.com",
-      phoneNumber: "8886543210",
-      role: Role.CUSTOMER,
+      clerkId: 'customer-001',
+      name: 'Alex Johnson',
+      email: 'alexjohnson@example.com',
+      phoneNumber: '1122334455',
+      role: 'CUSTOMER',
+    },
+  });
+  const user4 = await prisma.user.create({
+    data: {
+      clerkId: 'user_2sB4vFmbn240RemIYal8PkW8Cpz',
+      name: 'Aapke Gaane',
+      email: 'aapkegaane0@example.com',
+      phoneNumber: '9252993222',
+      role: 'OWNER',
     },
   });
 
-  // Create a sample hotel
+  // 2. Create a Hotel
   const hotel = await prisma.hotel.create({
     data: {
-      hotelName: "Sunset Paradise Hotel",
-      description: "A luxurious hotel with breathtaking views of the sunset, offering world-class amenities and exceptional hospitality.",
-      location: "https://maps.app.goo.gl/san6xjr1mabGLsx59",
-      address: "123, Main Road, Jaipur, Rajasthan, India",
-      totalRooms: 26,
-      code: "a43j",
-      contactNumber: "+91-9876543210",
-      amenities: [
-        "Free WiFi",
-        "Gym",
-        "Spa",
-        "Room Service",
-        "Airport Pickup"
-      ],
-      hotelImages: [
-        "https://images.unsplash.com/photo-1517840901100-8179e982acb7?q=80&w=2940&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=2940&auto=format&fit=crop"
-      ],
+      hotelName: 'King Palace',
+      description: 'Best hotel in the town to experience',
+      location: 'maps.google.com/abcd/ijkl',
+      address: 'Hindi Village, USA road, 32 inc, India',
+      totalRooms: 5,
+      code: 'abcd',
+      contactNumber: '9252993222',
+      amenities: ['bathtub', 'balcony', 'mountains'],
+      hotelImages: ['https://images.unsplash.com/photo-1738230077816-fbab6232c545?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 'https://images.unsplash.com/photo-1738000711416-a22d5ad609a8?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'],
       owner: {
-        connect: {
-          id: owner.id
-        }
+        connect: { id: user4.id }, // Connect the owner to this hotel
       },
       managers: {
-        connect: {
-          id: manager.id
-        }
+        connect: [{ id: user2.id }], // Connect the manager to this hotel
       },
     },
   });
 
-  // Create hotel rules
+  // 3. Create Hotel Rules
   const hotelRules = await prisma.hotelRules.create({
     data: {
       hotelId: hotel.id,
@@ -77,88 +73,104 @@ async function main() {
       extraMattressOnAvailability: true,
       parking: true,
       swimmingPool: true,
-      swimmingPoolTimings: "6:00 AM - 8:00 PM",
+      swimmingPoolTimings: '9 AM - 6 PM',
       ownRestaurant: true,
-      checkInTime: "11:00",
-      checkOutTime: "10:00",
+      checkInTime: '2 PM',
+      checkOutTime: '12 PM',
       guestInfoNeeded: true,
       smokingAllowed: false,
-      alcoholAllowed: true,
+      alcoholAllowed: false,
       eventsAllowed: true,
       minimumAgeForCheckIn: 18,
     },
   });
 
-  // Create sample rooms
-  const luxurySuite = await prisma.room.create({
-    data: {
-      hotelId: hotel.id,
-      roomNumber: "101",
-      type: "Suite",
-      price: 5000,
-      maxOccupancy: 3,
-      available: true,
-      features: ["AC", "TV", "Balcony", "Bathtub"],
-      images: [
-        "https://images.unsplash.com/photo-1541971875076-8f970d573be6?q=80&w=3174&auto=format&fit=crop"
-      ],
-    },
-  });
+  // 4. Create Rooms for the Hotel
+  const rooms = await Promise.all([
+    prisma.room.create({
+      data: {
+        roomNumber: '101',
+        type: 'Single',
+        price: 1000,
+        maxOccupancy: 2,
+        hotelId: hotel.id,
+        features: ['bathtub', 'balcony'],
+        images: ['https://images.unsplash.com/photo-1611892440504-42a792e24d32?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aG90ZWwlMjByb29tfGVufDB8fDB8fHww', 'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8aG90ZWwlMjByb29tfGVufDB8fDB8fHww'],
+      },
+    }),
+    prisma.room.create({
+      data: {
+        roomNumber: '102',
+        type: 'Double',
+        price: 1500,
+        maxOccupancy: 4,
+        hotelId: hotel.id,
+        features: ['bathtub', 'mountains view'],
+        images: ['https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8aG90ZWwlMjByb29tfGVufDB8fDB8fHww', 'https://plus.unsplash.com/premium_photo-1670360414903-19e5832f8bc4?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8aG90ZWwlMjByb29tfGVufDB8fDB8fHww'],
+      },
+    }),
+    prisma.room.create({
+      data: {
+        roomNumber: '103',
+        type: 'Suite',
+        price: 2500,
+        maxOccupancy: 4,
+        hotelId: hotel.id,
+        features: ['jacuzzi', 'balcony', 'mountain view'],
+        images: ['https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8M3x8aG90ZWwlMjByb29tfGVufDB8fDB8fHww', 
+       'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8aG90ZWwlMjByb29tfGVufDB8fDB8fHww'],
+      },
+    }),
+  ]);
 
-  const deluxeRoom = await prisma.room.create({
+  // 5. Create Bookings for the Rooms
+  const booking1 = await prisma.booking.create({
     data: {
       hotelId: hotel.id,
-      roomNumber: "102",
-      type: "Double",
-      price: 3000,
-      maxOccupancy: 2,
-      available: false,
-      features: ["AC", "TV", "Mini-Fridge"],
-      images: [
-        "https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=3132&auto=format&fit=crop"
-      ],
-    },
-  });
-
-  // Create a sample booking with payment
-  const booking = await prisma.booking.create({
-    data: {
-      hotelId: hotel.id,
-      roomId: deluxeRoom.id,
-      customerId: customer.id,
-      checkIn: new Date("2024-08-25"),
-      checkOut: new Date("2024-08-28"),
+      roomId: rooms[0].id,
+      customerId: user3.id,
+      checkIn: new Date('2023-11-01T14:00:00'),
+      checkOut: new Date('2023-11-05T12:00:00'),
       guests: 2,
-      status: BookingStatus.CONFIRMED,
-      bookingTime: new Date("2024-08-20T15:30:00Z"),
+      status: 'PENDING',
       payment: {
         create: {
-          totalAmount: 9000,
-          paidAmount: 9000,
-          status: PaymentStatus.PAID,
-          transactionId: "txn5678",
+          totalAmount: 1000,
+          paidAmount: 0,
+          status: 'PENDING',
+          transactionId: "OFFLINE",
         },
       },
     },
   });
 
-  console.log({
-    owner,
-    manager,
-    customer,
-    hotel,
-    hotelRules,
-    luxurySuite,
-    deluxeRoom,
-    booking,
+  const booking2 = await prisma.booking.create({
+    data: {
+      hotelId: hotel.id,
+      roomId: rooms[1].id,
+      customerId: user3.id,
+      checkIn: new Date('2023-12-01T14:00:00'),
+      checkOut: new Date('2023-12-05T12:00:00'),
+      guests: 2,
+      status: 'PENDING',
+      payment: {
+        create: {
+          totalAmount: 1500,
+          paidAmount: 0,
+          status: 'PENDING',
+          transactionId: "OFFLINE",
+        },
+      },
+    },
   });
+
+  console.log('Dummy Data Created Successfully!');
 }
 
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
+createDummyData()
+  .catch((error) => {
+    console.error(error);
   })
   .finally(async () => {
     await prisma.$disconnect();
-  }); 
+  });

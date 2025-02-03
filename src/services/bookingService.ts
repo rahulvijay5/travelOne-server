@@ -1,6 +1,7 @@
 import prisma from '../config/database';
-import { Booking, BookingStatus, Payment, PaymentStatus } from '@prisma/client';
+import { Booking, BookingStatus, Payment, PaymentStatus, RoomStatus } from '@prisma/client';
 import { CreateBookingData, UpdateBookingData, UpdatePaymentData } from '@/types';
+
 export class BookingService {
   async createBooking(data: CreateBookingData): Promise<Booking> {
     // Check if room is available for the given dates
@@ -29,6 +30,11 @@ export class BookingService {
       throw new Error('Room is not available for the selected dates');
     }
 
+    const roomStatus = await prisma.room.update({
+      where: { id: data.roomId },
+      data: { roomStatus: RoomStatus.BOOKED }
+    });
+
     // Create booking with payment
     return prisma.booking.create({
       data: {
@@ -38,7 +44,7 @@ export class BookingService {
         checkIn: data.checkIn,
         checkOut: data.checkOut,
         guests: data.guests,
-        status: BookingStatus.CONFIRMED,
+        status: BookingStatus.PENDING,
         payment: data.payment ? {
           create: {
             ...data.payment,
@@ -115,6 +121,23 @@ export class BookingService {
     return prisma.booking.findMany({
       where: {
         hotelId
+      },
+      include: {
+        room: true,
+        customer: true,
+        payment: true
+      },
+      orderBy: {
+        checkIn: 'desc'
+      }
+    });
+  }
+
+  async getHotelBookingsByStatus(hotelId: string, status: BookingStatus): Promise<Booking[]> {
+    return prisma.booking.findMany({
+      where: {
+        hotelId,
+        status
       },
       include: {
         room: true,

@@ -62,7 +62,7 @@ export const getUserByClerkId = async (
       return;
     }
 
-    res.json(user);
+    res.status(200).json(user);
   } catch (error) {
     console.error("Error fetching user:", error);
     res.status(500).json({ error: "Error fetching user" });

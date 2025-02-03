@@ -28,6 +28,13 @@ enum PaymentStatus {
   FAILED
 }
 
+enum RoomStatus {
+  AVAILABLE
+  BOOKED
+  MAINTENANCE
+  LOCKED
+}
+
 model User {
   id          String    @id @default(uuid())
   clerkId     String    @unique
@@ -100,9 +107,9 @@ model Room {
   type        String
   price       Float
   maxOccupancy Int
-  available   Boolean   @default(true)
   features    String[]
   images      String[]
+  roomStatus  RoomStatus @default(AVAILABLE)
 
   // Relations
   bookings    Booking[]
@@ -128,7 +135,6 @@ model Booking {
   payment     Payment?
 
   bookingTime DateTime  @default(now())
-  createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
 

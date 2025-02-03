@@ -105,10 +105,32 @@ export const getHotelBookings = async (
   try {
     const { hotelId } = req.params;
     const bookings = await bookingService.getHotelBookings(hotelId);
-    res.json(bookings);
+    if (!bookings) {
+      res.status(404).json({ error: "Bookings not found" });
+      return;
+    }
+    res.status(200).json(bookings);
   } catch (error) {
     console.error("Error fetching hotel bookings:", error);
     res.status(500).json({ error: "Error fetching hotel bookings" });
+  }
+};
+
+export const getHotelBookingsByStatus = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hotelId, status } = req.params;
+    const bookings = await bookingService.getHotelBookingsByStatus(hotelId, status as BookingStatus);
+    if (!bookings) {
+      res.status(404).json({ error: `Bookings with ${status} status not found` });
+      return;
+    }
+    res.status(200).json(bookings);
+  } catch (error) {
+    console.error("Error fetching hotel bookings by status:", error);
+    res.status(500).json({ error: "Error fetching hotel bookings by status" });
   }
 };
 
