@@ -6,7 +6,7 @@ async function createDummyData() {
   // 1. Create Users (owner, manager, and customer)
   const user1 = await prisma.user.create({
     data: {
-      clerkId: 'user_2sKyE39pd606qSq9GZU8ee5UCLz',
+      clerkId: 'user_2sKyE39pd6O6qSq9GZU8ee5UCLz',
       name: 'Sample User',
       email: 'sampleuser@example.com',
       phoneNumber: '9252993111',

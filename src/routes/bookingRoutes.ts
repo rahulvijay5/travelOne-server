@@ -261,7 +261,7 @@ router.delete('/:bookingId', cancelBooking);
  * @swagger
  * /api/bookings/{bookingId}/payment:
  *   patch:
- *     summary: Update payment status
+ *     summary: Update payment status and respective booking and room status
  *     tags: [Bookings]
  *     security:
  *       - BearerAuth: []
@@ -295,8 +295,14 @@ router.delete('/:bookingId', cancelBooking);
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Payment'
+ *       206:
+ *         description: Payment Done, not booking status
+ *         content:
+ *           application/json:
+ *                 message:
+ *                   type: string
  *       404:
- *         description: Booking not found
+ *         description: Payment not found
  */
 router.patch('/:bookingId/payment', updatePaymentStatus);
 

@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { BookingService } from "../services/bookingService";
-import { BookingStatus, PaymentStatus } from "@prisma/client";
+import { BookingStatus, PaymentStatus, RoomStatus } from "@prisma/client";
+import { RoomService } from "@/services/roomService";
 
 const bookingService = new BookingService();
+const roomService = new RoomService();
 
 export const createBooking = async (
   req: Request,
@@ -123,6 +125,7 @@ export const getHotelBookingsByStatus = async (
   try {
     const { hotelId, status } = req.params;
     const bookings = await bookingService.getHotelBookingsByStatus(hotelId, status as BookingStatus);
+    console.log(bookings)
     if (!bookings) {
       res.status(404).json({ error: `Bookings with ${status} status not found` });
       return;
@@ -154,7 +157,33 @@ export const updatePaymentStatus = async (
       paidAmount,
     });
 
-    res.json(payment);
+    if (!payment) {
+      res.status(404).json({ error: "Payment not found" });
+      return;
+    }
+
+    let responseMessage = "Payment status updated";
+    let responseData: any = { payment };
+
+    if (payment.status === PaymentStatus.PAID) {
+      const booking = await bookingService.updateBooking(bookingId, {
+        status: BookingStatus.CONFIRMED
+      });
+      responseMessage = "Payment Done, booking status updated";
+      responseData.booking = booking;
+    } else if (payment.status === PaymentStatus.FAILED) {
+      const booking = await bookingService.updateBooking(bookingId, {
+        status: BookingStatus.CANCELLED
+      });
+      await roomService.updateRoomStatus(booking.roomId, RoomStatus.AVAILABLE);
+      responseMessage = "Payment Failed, booking status updated";
+      responseData.booking = booking;
+    }
+
+    res.status(200).json({
+      message: responseMessage,
+      ...responseData
+    });
   } catch (error) {
     console.error("Error updating payment status:", error);
     res.status(500).json({ error: "Error updating payment status" });
