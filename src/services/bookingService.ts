@@ -44,7 +44,7 @@ export class BookingService {
         checkIn: data.checkIn,
         checkOut: data.checkOut,
         guests: data.guests,
-        status: BookingStatus.PENDING,
+        status: data.status || BookingStatus.PENDING,
         payment: data.payment ? {
           create: {
             ...data.payment,

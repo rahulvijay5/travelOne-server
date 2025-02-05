@@ -36,12 +36,18 @@ export const searchUsers = async (
 ): Promise<void> => {
   try {
     const { query } = req.query;
+
     if (!query || typeof query !== "string") {
       res.status(400).json({ error: "Search query is required" });
       return;
     }
     const users = await userService.searchUsers(query);
-    res.json(users);
+
+    if (users.length === 0) {
+      res.status(404).json({ error: "No users found" });
+      return;
+    }
+    res.status(200).json(users);
   } catch (error) {
     console.error("Error searching users:", error);
     res.status(500).json({ error: "Error searching users" });

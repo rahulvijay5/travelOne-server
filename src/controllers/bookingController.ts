@@ -15,8 +15,12 @@ export const createBooking = async (
     const booking = await bookingService.createBooking(bookingData);
     res.status(201).json(booking);
   } catch (error) {
-    console.error("Error creating booking:", error);
-    res.status(500).json({ error: "Error creating booking" });
+    if (error instanceof Error && error.message === 'Room is not available for the selected dates or it is already booked.') {
+      res.status(400).json({ error: error.message });
+    } else {
+      console.error("Error creating booking:", error);
+      res.status(500).json({ error: "Error creating booking" });
+    }
   }
 };
 

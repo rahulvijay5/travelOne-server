@@ -74,6 +74,8 @@ router.use(requireAuth());
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Booking'
+ *       400:
+ *         description: Room is not available for the selected dates
  */
 router.post('/', createBooking);
 

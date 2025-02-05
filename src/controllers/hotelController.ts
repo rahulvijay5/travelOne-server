@@ -44,6 +44,7 @@ export const getHotelsByOwnerId = async (
 ): Promise<void> => {
   try {
     const { ownerId } = req.params;
+    console.log("Owner ID: ", ownerId);
     const hotel = await hotelService.getHotelsByOwnerId(ownerId);
     console.log(hotel);
     

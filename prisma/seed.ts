@@ -7,8 +7,8 @@ async function createDummyData() {
   const user1 = await prisma.user.create({
     data: {
       clerkId: 'user_2sKyE39pd6O6qSq9GZU8ee5UCLz',
-      name: 'Sample User',
-      email: 'sampleuser@example.com',
+      name: 'Ayush Bhai',
+      email: 'abcd+clerk_test@example.com',
       phoneNumber: '9252993111',
       role: 'CUSTOMER',
     },
@@ -17,9 +17,9 @@ async function createDummyData() {
   const user2 = await prisma.user.create({
     data: {
       clerkId: 'manager-001',
-      name: 'Jane Smith',
-      email: 'janesmith@example.com',
-      phoneNumber: '0987654321',
+      name: 'Pankaj Kumar',
+      email: 'pankaj+clerk_test@example.com',
+      phoneNumber: '9876543210',
       role: 'MANAGER',
     },
   });
@@ -54,7 +54,7 @@ async function createDummyData() {
       code: 'abcd',
       contactNumber: '9252993222',
       amenities: ['bathtub', 'balcony', 'mountains'],
-      hotelImages: ['https://images.unsplash.com/photo-1738230077816-fbab6232c545?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 'https://images.unsplash.com/photo-1738000711416-a22d5ad609a8?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'],
+      hotelImages: ['https://images.unsplash.com/photo-1564501049412-61c2a3083791?q=80&w=2832&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D', 'https://images.unsplash.com/photo-1738000711416-a22d5ad609a8?q=80&w=2940&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'],
       owner: {
         connect: { id: user4.id }, // Connect the owner to this hotel
       },

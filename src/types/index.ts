@@ -52,6 +52,7 @@ export interface CreateBookingData {
   checkIn: Date;
   checkOut: Date;
   guests: number;
+  status?: BookingStatus;
   payment?: {
     totalAmount: number;
     paidAmount: number;
