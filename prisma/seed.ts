@@ -129,8 +129,8 @@ async function createDummyData() {
       hotelId: hotel.id,
       roomId: rooms[0].id,
       customerId: user3.id,
-      checkIn: new Date('2023-11-01T14:00:00'),
-      checkOut: new Date('2023-11-05T12:00:00'),
+      checkIn: new Date(),
+      checkOut: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
       guests: 2,
       status: 'PENDING',
       payment: {
@@ -149,8 +149,8 @@ async function createDummyData() {
       hotelId: hotel.id,
       roomId: rooms[1].id,
       customerId: user3.id,
-      checkIn: new Date('2023-12-01T14:00:00'),
-      checkOut: new Date('2023-12-05T12:00:00'),
+      checkIn: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+      checkOut: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
       guests: 2,
       status: 'PENDING',
       payment: {

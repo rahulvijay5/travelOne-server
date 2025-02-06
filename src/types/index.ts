@@ -1,4 +1,4 @@
-import { BookingStatus, Role } from "@prisma/client";
+import { Booking, BookingStatus, Role, RoomStatus } from "@prisma/client";
 
 import { PaymentStatus } from "@prisma/client";
 
@@ -101,4 +101,27 @@ export interface CreateUserData {
   name: string;
   clerkId: string;
   role?: Role;
+}
+
+
+export interface FilteredBookingResponse {
+  data: Booking[];
+  pagination: {
+    total: number;
+    pages: number;
+    currentPage: number;
+    limit: number;
+  };
+}
+
+export interface BookingFilters {
+  status?: BookingStatus;
+  timeRange?: 'today' | 'yesterday' | 'thisWeek' | 'thisMonth' | 'custom';
+  startDate?: Date;
+  endDate?: Date;
+  roomStatus?: RoomStatus;
+  sortBy?: 'checkIn' | 'checkOut' | 'bookingTime';
+  sortOrder?: 'asc' | 'desc';
+  page?: number;
+  limit?: number;
 }

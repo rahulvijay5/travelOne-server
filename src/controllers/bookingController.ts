@@ -36,7 +36,7 @@ export const getBookingById = async (
       res.status(404).json({ error: "Booking not found" });
       return;
     }
-
+    console.log("Booking: ", booking);
     res.json(booking);
   } catch (error) {
     console.error("Error fetching booking:", error);
@@ -138,6 +138,60 @@ export const getHotelBookingsByStatus = async (
   } catch (error) {
     console.error("Error fetching hotel bookings by status:", error);
     res.status(500).json({ error: "Error fetching hotel bookings by status" });
+  }
+};
+
+export const getFilteredHotelBookings = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hotelId } = req.params;
+    const {
+      status,
+      timeRange,
+      startDate,
+      endDate,
+      roomStatus,
+      sortBy,
+      sortOrder,
+      page,
+      limit
+    } = req.query;
+
+    // Validate and parse query parameters
+    const filters = {
+      status: status as BookingStatus,
+      timeRange: timeRange as 'today' | 'yesterday' | 'thisWeek' | 'thisMonth' | 'custom',
+      startDate: startDate ? new Date(startDate as string) : undefined,
+      endDate: endDate ? new Date(endDate as string) : undefined,
+      roomStatus: roomStatus as RoomStatus,
+      sortBy: sortBy as 'checkIn' | 'checkOut' | 'bookingTime',
+      sortOrder: sortOrder as 'asc' | 'desc',
+      page: page ? parseInt(page as string) : undefined,
+      limit: limit ? parseInt(limit as string) : undefined
+    };
+
+    // Validate date range if custom timeRange
+    if (filters.timeRange === 'custom') {
+      if (!filters.startDate || !filters.endDate) {
+        res.status(400).json({ error: "startDate and endDate are required for custom timeRange" });
+        return;
+      }
+      if (filters.startDate > filters.endDate) {
+        res.status(400).json({ error: "startDate must be before or equal to endDate" });
+        return;
+      }
+    }
+
+    console.log("Filters: ", filters);
+
+    const result = await bookingService.getFilteredHotelBookings(hotelId, filters);
+    console.log("Result: ", result.data);
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching filtered hotel bookings:", error);
+    res.status(500).json({ error: "Error fetching filtered hotel bookings" });
   }
 };
 

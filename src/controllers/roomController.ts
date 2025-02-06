@@ -81,7 +81,7 @@ export const getHotelRooms = async (
   try {
     const { hotelId } = req.params;
     const rooms = await roomService.getHotelRooms(hotelId);
-
+    console.log("Got hotel rooms: ", rooms);
     if (!rooms) {
       res.status(404).json({ error: "Rooms not found" });
       return;

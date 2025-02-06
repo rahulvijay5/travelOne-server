@@ -1,6 +1,6 @@
 import prisma from '../config/database';
 import { Booking, BookingStatus, Payment, PaymentStatus, RoomStatus } from '@prisma/client';
-import { CreateBookingData, UpdateBookingData, UpdatePaymentData } from '@/types';
+import { BookingFilters, CreateBookingData, FilteredBookingResponse, UpdateBookingData, UpdatePaymentData } from '@/types';
 
 export class BookingService {
   async createBooking(data: CreateBookingData): Promise<Booking> {
@@ -164,6 +164,140 @@ export class BookingService {
       where: { id: booking.payment.id },
       data
     });
+  }
+
+  async getFilteredHotelBookings(
+    hotelId: string,
+    filters: BookingFilters
+  ): Promise<FilteredBookingResponse> {
+    const {
+      status,
+      timeRange,
+      startDate,
+      endDate,
+      roomStatus,
+      sortBy = 'bookingTime',
+      sortOrder = 'desc',
+      page = 1,
+      limit = 10
+    } = filters;
+
+    // Calculate date ranges based on timeRange
+    let dateFilter: any = {};
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    switch (timeRange) {
+      case 'today':
+        dateFilter = {
+          checkIn: {
+            gte: today,
+            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
+          }
+        };
+        break;
+      case 'yesterday':
+        dateFilter = {
+          checkIn: {
+            gte: new Date(today.getTime() - 24 * 60 * 60 * 1000),
+            lt: today
+          }
+        };
+        break;
+      case 'thisWeek':
+        const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
+        dateFilter = {
+          checkIn: {
+            gte: startOfWeek,
+            lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+          }
+        };
+        break;
+      case 'thisMonth':
+        dateFilter = {
+          checkIn: {
+            gte: new Date(now.getFullYear(), now.getMonth(), 1),
+            lt: new Date(now.getFullYear(), now.getMonth() + 1, 1)
+          }
+        };
+        break;
+      case 'custom':
+        if (startDate && endDate) {
+          dateFilter = {
+            checkIn: {
+              gte: startDate,
+              lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
+            }
+          };
+        }
+        break;
+    }
+
+    // Build where clause
+    const where: any = {
+      hotelId,
+      ...(status && { status }),
+      ...(roomStatus && { room: { roomStatus } }),
+      ...dateFilter
+    };
+
+    // Calculate pagination
+    const skip = (page - 1) * limit;
+
+    // Build sort order
+    const orderBy: any = {
+      [sortBy]: sortOrder
+    };
+
+    // Execute count query and data query in parallel for better performance
+    const [total, bookings] = await Promise.all([
+      prisma.booking.count({ where }),
+      prisma.booking.findMany({
+        where,
+        include: {
+          room: {
+            select: {
+              id: true,
+              roomNumber: true,
+              type: true,
+              roomStatus: true,
+              price: true
+            }
+          },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phoneNumber: true
+            }
+          },
+          payment: {
+            select: {
+              id: true,
+              status: true,
+              totalAmount: true,
+              paidAmount: true
+            }
+          }
+        },
+        orderBy,
+        skip,
+        take: limit
+      })
+    ]);
+
+    const pages = Math.ceil(total / limit);
+
+    return {
+      data: bookings,
+      pagination: {
+        total,
+        pages,
+        currentPage: page,
+        limit
+      }
+    };
   }
 }
  

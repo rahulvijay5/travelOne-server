@@ -8,7 +8,8 @@ import {
   getUserBookings,
   getHotelBookings,
   updatePaymentStatus,
-  getHotelBookingsByStatus
+  getHotelBookingsByStatus,
+  getFilteredHotelBookings
 } from '../controllers/bookingController';
 
 const router = express.Router();
@@ -126,6 +127,100 @@ router.get('/user', getUserBookings);
  */
 router.get('/hotel/:hotelId', getHotelBookings);
 
+/**
+ * @swagger
+ * /api/bookings/hotel/{hotelId}/filter:
+ *   get:
+ *     summary: Get filtered hotel bookings
+ *     tags: [Bookings]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hotelId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the hotel
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [PENDING, CONFIRMED, CANCELLED, COMPLETED]
+ *         description: Booking status filter
+ *       - in: query
+ *         name: timeRange
+ *         schema:
+ *           type: string
+ *           enum: [today, yesterday, thisWeek, thisMonth, custom]
+ *         description: Predefined time range filter
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Start date for custom range (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: End date for custom range (YYYY-MM-DD)
+ *       - in: query
+ *         name: roomStatus
+ *         schema:
+ *           type: string
+ *           enum: [AVAILABLE, BOOKED, MAINTENANCE]
+ *         description: Room status filter
+ *       - in: query
+ *         name: sortBy
+ *         schema:
+ *           type: string
+ *           enum: [checkIn, checkOut, bookingTime]
+ *         description: Field to sort by
+ *       - in: query
+ *         name: sortOrder
+ *         schema:
+ *           type: string
+ *           enum: [asc, desc]
+ *         description: Sort order
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: List of filtered hotel bookings
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Booking'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                     pages:
+ *                       type: integer
+ *                     currentPage:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ */
+router.get('/hotel/:hotelId/filter', getFilteredHotelBookings);
 
 /**
  * @swagger
