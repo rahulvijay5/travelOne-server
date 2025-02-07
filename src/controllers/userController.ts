@@ -103,3 +103,18 @@ export const updateUserRole = async (
     res.status(500).json({ error: "Error updating user role" });
   }
 };
+
+export const getCurrentManagingHotel = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { userId } = req.params;
+  console.log("User ID: ", userId);
+  try {
+    const hotel = await userService.getCurrentManagingHotel(userId);
+    res.json(hotel);
+  } catch (error) {
+    console.error("Error fetching current managing hotel:", error);
+    res.status(500).json({ error: "Error fetching current managing hotel" });
+  }
+};

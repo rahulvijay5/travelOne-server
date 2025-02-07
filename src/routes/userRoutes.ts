@@ -1,5 +1,5 @@
 import express from 'express';
-import { createUser, searchUsers, updateUserRole, getUserByClerkId } from '../controllers/userController';
+import { createUser, searchUsers, updateUserRole, getUserByClerkId, getCurrentManagingHotel } from '../controllers/userController';
 import { requireAuth } from '@clerk/express';
 
 const router = express.Router();
@@ -105,6 +105,8 @@ router.post('/update-role', requireAuth(), updateUserRole);
  */
 router.get('/search', requireAuth(), searchUsers);
 
+
+router.get('/currentManagingHotel/:userId', requireAuth(), getCurrentManagingHotel);
 /**
  * @swagger
  * /api/users/{clerkId}:

@@ -1,6 +1,6 @@
 import { CreateUserData } from '@/types';
 import prisma from '../config/database';
-import { Role, User } from '@prisma/client';
+import { Hotel, Role, User } from '@prisma/client';
 
 export class UserService {
   async createUser(userData: CreateUserData): Promise<User> {
@@ -52,5 +52,13 @@ export class UserService {
       where: { clerkId: clerkId },
       data: { role }
     });
+  }
+
+  async getCurrentManagingHotel(userId: string): Promise<Hotel | null> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { managedHotels: true }
+    });
+    return user?.managedHotels[0] || null;
   }
 } 
