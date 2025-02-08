@@ -1,6 +1,7 @@
 import prisma from '../config/database';
 import { Room, RoomStatus } from '@prisma/client';
 import { CreateRoomData, CreateRooms, UpdateRoomData } from '@/types';
+import { imageService } from './imageService';
 
 export class RoomService {
   async createRoom(data: CreateRoomData): Promise<Room> {
@@ -51,15 +52,15 @@ export class RoomService {
   async getRoomById(roomId: string): Promise<Room | null> {
     return prisma.room.findUnique({
       where: { id: roomId },
-      include: {
-        hotel: true,
-        bookings: {
-          include: {
-            customer: true,
-            payment: true
-          }
-        }
-      }
+      // include: {
+      //   hotel: true,
+      //   bookings: {
+      //     include: {
+      //       customer: true,
+      //       payment: true
+      //     }
+      //   }
+      // }
     });
   }
 
@@ -74,6 +75,20 @@ export class RoomService {
   }
 
   async deleteRoom(roomId: string): Promise<void> {
+    // First get the room to access its images
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      select: {
+        images: true
+      }
+    });
+
+    if (room && room.images.length > 0) {
+      // Delete all images from Cloudflare
+      await imageService.deleteImages(room.images);
+    }
+
+    // Then delete the room from database
     await prisma.room.delete({
       where: { id: roomId }
     });

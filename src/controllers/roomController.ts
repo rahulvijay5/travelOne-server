@@ -65,6 +65,8 @@ export const updateRoom = async (
   try {
     const { roomId } = req.params;
     const updateData = req.body;
+    updateData.price = parseFloat(updateData.price);
+    updateData.maxOccupancy = parseFloat(updateData.maxOccupancy);
     const room = await roomService.updateRoom(roomId, updateData);
     
     if (!room) {
@@ -86,10 +88,21 @@ export const deleteRoom = async (
   try {
     const { roomId } = req.params;
     await roomService.deleteRoom(roomId);
-    res.status(204).send();
+    res.status(200).json({ 
+      message: "Room and associated images deleted successfully" 
+    });
   } catch (error) {
     console.error("Error deleting room:", error);
-    res.status(500).json({ error: "Error deleting room" });
+    if (error instanceof Error) {
+      res.status(500).json({ 
+        error: "Error deleting room", 
+        details: error.message 
+      });
+    } else {
+      res.status(500).json({ 
+        error: "Error deleting room" 
+      });
+    }
   }
 };
 
