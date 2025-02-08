@@ -228,6 +228,9 @@ export const updateHotelRules = async (
   try {
     const { hotelId } = req.params;
     const rulesData = req.body;
+    
+    console.log("Hotel ID: ", hotelId);
+    console.log("Rules data: ", rulesData);
     const rules = await hotelService.updateHotelRules(hotelId, rulesData);
     res.json(rules);
   } catch (error) {

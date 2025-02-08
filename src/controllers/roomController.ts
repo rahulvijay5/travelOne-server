@@ -19,6 +19,25 @@ export const createRoom = async (
   }
 };
 
+export const createMultipleRooms = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { hotelId } = req.params;
+    const roomsData = { hotelId, rooms: req.body.rooms };
+    console.log("Rooms data: ", roomsData);
+    const result = await roomService.createMultipleRooms(roomsData);
+    res.status(201).json({
+      message: `Successfully created ${result.count} rooms`,
+      ...result
+    });
+  } catch (error) {
+    console.error("Error creating multiple rooms:", error);
+    res.status(500).json({ error: "Error creating multiple rooms" });
+  }
+};
+
 export const getRoomById = async (
   req: Request,
   res: Response

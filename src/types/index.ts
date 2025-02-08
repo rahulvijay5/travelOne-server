@@ -77,12 +77,17 @@ export interface UpdatePaymentData {
 //Room
 export interface CreateRoomData {
   hotelId: string;
-  name: string;
+  roomNumber: string;
   type: string;
   price: number;
   maxOccupancy: number;
   features: string[];
   images: string[];
+}
+
+export interface CreateRooms {
+  hotelId: string;
+  rooms: CreateRoomData[];
 }
 
 export interface UpdateRoomData {

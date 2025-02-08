@@ -1,6 +1,6 @@
 import prisma from '../config/database';
 import { Room, RoomStatus } from '@prisma/client';
-import { CreateRoomData, UpdateRoomData } from '@/types';
+import { CreateRoomData, CreateRooms, UpdateRoomData } from '@/types';
 
 export class RoomService {
   async createRoom(data: CreateRoomData): Promise<Room> {
@@ -16,6 +16,36 @@ export class RoomService {
         hotel: true
       }
     });
+  }
+
+  async createMultipleRooms(data: CreateRooms): Promise<{ count: number; rooms: Room[] }> {
+    const { hotelId, rooms } = data;
+
+    // First create all rooms using createMany for efficiency
+    await prisma.room.createMany({
+      data: rooms.map((room) => ({
+        ...room,
+        hotelId
+      }))
+    });
+
+    // Then fetch all created rooms with their relations
+    const createdRooms = await prisma.room.findMany({
+      where: {
+        hotelId,
+        roomNumber: {
+          in: rooms.map(room => room.roomNumber)
+        }
+      },
+      orderBy: {
+        roomNumber: 'asc'
+      }
+    });
+
+    return {
+      count: createdRooms.length,
+      rooms: createdRooms
+    };
   }
 
   async getRoomById(roomId: string): Promise<Room | null> {

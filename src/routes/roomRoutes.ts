@@ -2,12 +2,13 @@ import express from 'express';
 import { requireAuth } from '@clerk/express';
 import {
   createRoom,
+  createMultipleRooms,
   getRoomById,
   updateRoom,
   deleteRoom,
   getHotelRooms,
   getHotelRoomsByStatus,
-  updateRoomStatus
+  updateRoomStatus,
 } from '../controllers/roomController';
 
 const router = express.Router();
@@ -127,6 +128,60 @@ router.get('/hotel/:hotelId', getHotelRooms);
  *               $ref: '#/components/schemas/Room'
  */
 router.post('/hotel/:hotelId', createRoom);
+
+
+/**
+ * @swagger
+ * /api/rooms/multiple/{hotelId}:
+ *   post:
+ *     summary: Create multiple rooms in a hotel
+ *     tags: [Rooms]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hotelId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the hotel
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - type
+ *               - price
+ *               - maxOccupancy
+ *             properties:
+ *               name:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               maxOccupancy:
+ *                 type: integer
+ *               features:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Rooms created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Room'
+ */
+router.post('/multiple/:hotelId', createMultipleRooms);
 
 /**
  * @swagger
