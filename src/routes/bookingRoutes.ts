@@ -9,7 +9,8 @@ import {
   getHotelBookings,
   updatePaymentStatus,
   getHotelBookingsByStatus,
-  getFilteredHotelBookings
+  getFilteredHotelBookings,
+  makeBookingCheckout
 } from '../controllers/bookingController';
 
 const router = express.Router();
@@ -402,5 +403,32 @@ router.delete('/:bookingId', cancelBooking);
  *         description: Payment not found
  */
 router.patch('/:bookingId/payment', updatePaymentStatus);
+
+/**
+ * @swagger
+ * /api/bookings/{bookingId}/checkout:
+ *   patch:
+ *     summary: Make booking checkout and update room status
+ *     tags: [Bookings]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: bookingId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the booking
+ *     responses:
+ *       200:
+ *         description: Booking checkout completed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Booking'
+ *       404:
+ *         description: Booking not found
+ */
+router.patch('/:bookingId/checkout', makeBookingCheckout);
 
 export default router; 

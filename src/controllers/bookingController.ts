@@ -247,3 +247,34 @@ export const updatePaymentStatus = async (
     res.status(500).json({ error: "Error updating payment status" });
   }
 }; 
+
+export const makeBookingCheckout = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { bookingId } = req.params;
+    const booking = await bookingService.makeCheckout(bookingId);
+    console.log("Booking: ", booking);
+    res.status(200).json({
+      message: "Booking checked out successfully",
+      booking
+    });
+  } catch (error) {
+    console.error("Error checking out booking:", error);
+    if (error instanceof Error) {
+      if (error.message === 'Booking not found') {
+        res.status(404).json({ error: error.message });
+      } else if (error.message === 'Only confirmed bookings can be checked out') {
+        res.status(400).json({ error: error.message });
+      } else {
+        res.status(500).json({ 
+          error: "Error checking out booking",
+          details: error.message
+        });
+      }
+    } else {
+      res.status(500).json({ error: "Error checking out booking" });
+    }
+  }
+}; 

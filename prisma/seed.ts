@@ -59,7 +59,7 @@ async function createDummyData() {
         connect: { id: user4.id }, // Connect the owner to this hotel
       },
       managers: {
-        connect: [{ id: user2.id }], // Connect the manager to this hotel
+        connect: [{ id: user2.id },{ id: user4.id }], // Connect the manager to this hotel
       },
     },
   });

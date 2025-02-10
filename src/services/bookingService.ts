@@ -86,6 +86,50 @@ export class BookingService {
     });
   }
 
+  async makeCheckout(bookingId: string): Promise<Booking> {
+    // First get the current booking status
+    const currentBooking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: {
+        room: true,
+        payment: true
+      }
+    });
+
+    if (!currentBooking) {
+      throw new Error('Booking not found');
+    }
+
+    if (currentBooking.status !== BookingStatus.CONFIRMED) {
+      throw new Error('Only confirmed bookings can be checked out');
+    }
+
+    // Use a transaction to ensure both booking and room status are updated
+    return prisma.$transaction(async (tx) => {
+      // Update booking status to COMPLETED
+      const updatedBooking = await tx.booking.update({
+        where: { id: bookingId },
+        data: {
+          status: BookingStatus.COMPLETED
+        },
+        // include: {
+        //   hotel: true,
+        //   room: true,
+        //   customer: true,
+        //   payment: true
+        // }
+      });
+
+      // Update room status to AVAILABLE
+      await tx.room.update({
+        where: { id: currentBooking.roomId },
+        data: { roomStatus: RoomStatus.AVAILABLE }
+      });
+
+      return updatedBooking;
+    });
+  }
+
   async cancelBooking(bookingId: string): Promise<Booking> {
     return prisma.booking.update({
       where: { id: bookingId },
