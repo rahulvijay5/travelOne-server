@@ -90,8 +90,8 @@ model HotelRules {
   swimmingPool Boolean  @default(false)
   swimmingPoolTimings String?
   ownRestaurant Boolean @default(false)
-  checkInTime  String
-  checkOutTime String
+  checkInTime  Int
+  checkOutTime Int
   guestInfoNeeded Boolean @default(true)
   smokingAllowed Boolean @default(false)
   alcoholAllowed Boolean @default(false)

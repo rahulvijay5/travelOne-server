@@ -9,6 +9,7 @@ import {
   getHotelRooms,
   getHotelRoomsByStatus,
   updateRoomStatus,
+  getAvailableRooms,
 } from '../controllers/roomController';
 
 const router = express.Router();
@@ -25,7 +26,7 @@ const router = express.Router();
  *         schema:
  *           type: string
  *         required: true
-  *         description: ID of the hotel
+ *         description: ID of the hotel
  *       - in: path
  *         name: roomStatus
  *         schema:
@@ -301,5 +302,123 @@ router.delete('/:roomId', deleteRoom);
  *         description: Room not found
  */
 router.patch('/:roomId/status', updateRoomStatus);
+
+/**
+ * @swagger
+ * /api/rooms/hotel/{hotelId}/available:
+ *   get:
+ *     summary: Get available rooms for specific dates and occupancy with pagination
+ *     tags: [Rooms]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: hotelId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: ID of the hotel
+ *       - in: query
+ *         name: checkIn
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         required: true
+ *         description: Check-in date and time in ISO 8601 format (e.g., 2024-02-15T14:00:00Z)
+ *       - in: query
+ *         name: checkOut
+ *         schema:
+ *           type: string
+ *           format: date-time
+ *         required: true
+ *         description: Check-out date and time in ISO 8601 format (e.g., 2024-02-16T10:00:00Z)
+ *       - in: query
+ *         name: guests
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *         required: true
+ *         description: Number of guests
+ *       - in: query
+ *         name: roomType
+ *         schema:
+ *           type: string
+ *         description: Filter by room type
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *         description: Maximum price per night
+ *       - in: query
+ *         name: features
+ *         schema:
+ *           type: string
+ *         description: Required room features (comma-separated, e.g., wifi,ac,tv)
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 50
+ *           default: 10
+ *         description: Number of items per page
+ *     responses:
+ *       200:
+ *         description: List of available rooms matching the criteria
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 availableRooms:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Room'
+ *                 totalRooms:
+ *                   type: integer
+ *                   description: Total number of rooms matching the criteria
+ *                 priceRange:
+ *                   type: object
+ *                   properties:
+ *                     min:
+ *                       type: number
+ *                     max:
+ *                       type: number
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     currentPage:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *       400:
+ *         description: Invalid parameters
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                 example:
+ *                   type: object
+ *                   properties:
+ *                     checkIn:
+ *                       type: string
+ *                     checkOut:
+ *                       type: string
+ *                     guests:
+ *                       type: string
+ */
+router.get('/:hotelId/available', getAvailableRooms);
 
 export default router; 

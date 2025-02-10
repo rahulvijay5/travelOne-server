@@ -251,10 +251,20 @@ export class BookingService {
       case 'thisWeek':
         const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
         dateFilter = {
-          checkIn: {
-            gte: startOfWeek,
-            lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
-          }
+          OR: [
+            {
+              checkIn: {
+                gte: startOfWeek,
+                lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+              }
+            },
+            {
+              checkOut: {
+                gte: startOfWeek,
+                lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
+              }
+            }
+          ]
         };
         break;
       case 'thisMonth':
@@ -268,10 +278,20 @@ export class BookingService {
       case 'custom':
         if (startDate && endDate) {
           dateFilter = {
-            checkIn: {
-              gte: startDate,
-              lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
-            }
+            OR: [
+              {
+                checkIn: {
+                  gte: startDate,
+                  lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
+                }
+              },
+              {
+                checkOut: {
+                  gte: startDate,
+                  lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
+                }
+              }
+            ]
           };
         }
         break;

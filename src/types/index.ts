@@ -35,8 +35,8 @@ export interface HotelRulesData {
   swimmingPool: boolean;
   swimmingPoolTimings: string | null;
   ownRestaurant: boolean;
-  checkInTime: string;
-  checkOutTime: string;
+  checkInTime: number;
+  checkOutTime: number;
   guestInfoNeeded: boolean;
   smokingAllowed: boolean;
   alcoholAllowed: boolean;

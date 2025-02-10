@@ -75,8 +75,8 @@ async function createDummyData() {
       swimmingPool: true,
       swimmingPoolTimings: '9 AM - 6 PM',
       ownRestaurant: true,
-      checkInTime: '2 PM',
-      checkOutTime: '12 PM',
+      checkInTime: 660,
+      checkOutTime: 600,
       guestInfoNeeded: true,
       smokingAllowed: false,
       alcoholAllowed: false,
@@ -129,8 +129,8 @@ async function createDummyData() {
       hotelId: hotel.id,
       roomId: rooms[0].id,
       customerId: user3.id,
-      checkIn: new Date(),
-      checkOut: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+      checkIn: new Date(new Date().setHours(11, 0, 0, 0)),
+      checkOut: new Date(new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).setHours(10, 0, 0, 0)),
       guests: 2,
       status: 'PENDING',
       payment: {
@@ -149,8 +149,8 @@ async function createDummyData() {
       hotelId: hotel.id,
       roomId: rooms[1].id,
       customerId: user3.id,
-      checkIn: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-      checkOut: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+      checkIn: new Date(new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).setHours(11, 0, 0, 0)),
+      checkOut: new Date(new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).setHours(10, 0, 0, 0)),
       guests: 2,
       status: 'PENDING',
       payment: {
@@ -158,6 +158,26 @@ async function createDummyData() {
           totalAmount: 1500,
           paidAmount: 0,
           status: 'PENDING',
+          transactionId: "OFFLINE",
+        },
+      },
+    },
+  });
+
+  const booking3 = await prisma.booking.create({
+    data: {
+      hotelId: hotel.id,
+      roomId: rooms[2].id,
+      customerId: user3.id,
+      checkIn: new Date(new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).setHours(11, 0, 0, 0)),
+      checkOut: new Date(new Date(Date.now() + 1 * 24 * 60 * 60 * 1000).setHours(10, 0, 0, 0)),
+      guests: 2,
+      status: 'CANCELLED',
+      payment: {
+        create: {
+          totalAmount: 2500,
+          paidAmount: 0,
+          status: 'FAILED',
           transactionId: "OFFLINE",
         },
       },

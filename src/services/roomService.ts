@@ -1,5 +1,5 @@
 import prisma from '../config/database';
-import { Room, RoomStatus } from '@prisma/client';
+import { Room, RoomStatus, BookingStatus } from '@prisma/client';
 import { CreateRoomData, CreateRooms, UpdateRoomData } from '@/types';
 import { imageService } from './imageService';
 
@@ -119,5 +119,152 @@ export class RoomService {
       where: { id: roomId },
       data: { roomStatus }
     });
+  }
+
+  async getAvailableRooms(
+    hotelId: string,
+    params: {
+      checkIn: Date;
+      checkOut: Date;
+      guests: number;
+      roomType?: string;
+      maxPrice?: number;
+      features?: string[];
+      page?: number;
+      limit?: number;
+    }
+  ): Promise<{
+    availableRooms: Room[];
+    totalRooms: number;
+    priceRange: { min: number; max: number };
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      limit: number;
+    };
+  }> {
+    const { 
+      checkIn, 
+      checkOut, 
+      guests, 
+      roomType, 
+      maxPrice, 
+      features,
+      page = 1,
+      limit = 10
+    } = params;
+
+    // Get all rooms that might be available (base criteria)
+    const whereClause: any = {
+      hotelId,
+      maxOccupancy: {
+        gte: guests
+      },
+      ...(roomType && { type: roomType }),
+      ...(maxPrice && { price: { lte: maxPrice } }),
+      ...(features && features.length > 0 && {
+        features: {
+          hasEvery: features
+        }
+      })
+    };
+
+    // Calculate skip for pagination
+    const skip = (page - 1) * limit;
+
+    // Find rooms that have no bookings or no conflicting bookings for the given dates
+    const [rooms, totalCount] = await Promise.all([
+      prisma.room.findMany({
+        where: {
+          AND: [
+            whereClause,
+            {
+              OR: [
+                {
+                  bookings: {
+                    none: {}
+                  }
+                },
+                {
+                  bookings: {
+                    every: {
+                      OR: [
+                        // Room is available if:
+                        // 1. Existing booking's check-out is before or equal to new check-in
+                        {
+                          AND: [
+                            { checkOut: { lte: checkIn } },
+                            { status: { not: BookingStatus.CANCELLED } }
+                          ]
+                        },
+                        // 2. Existing booking's check-in is after or equal to new check-out
+                        {
+                          AND: [
+                            { checkIn: { gte: checkOut } },
+                            { status: { not: BookingStatus.CANCELLED } }
+                          ]
+                        },
+                        // 3. Booking is cancelled
+                        {
+                          status: BookingStatus.CANCELLED
+                        }
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+      // include: {
+      //   hotel: {
+      //     select: {
+      //       hotelName: true,
+      //       address: true,
+      //       rules: {
+      //         select: {
+      //           checkInTime: true,
+      //           checkOutTime: true
+      //         }
+      //       }
+      //     }
+      //   }
+      // },
+        orderBy: {
+          price: 'asc'
+        },
+        skip,
+        take: limit
+      }),
+      prisma.room.count({
+        where: whereClause
+      })
+    ]);
+
+    // Calculate price range
+    const priceRange = rooms.reduce(
+      (acc, room) => ({
+        min: Math.min(acc.min, room.price),
+        max: Math.max(acc.max, room.price)
+      }),
+      { min: Infinity, max: -Infinity }
+    );
+
+    // If no rooms found, set price range to 0
+    if (rooms.length === 0) {
+      priceRange.min = 0;
+      priceRange.max = 0;
+    }
+
+    return {
+      availableRooms: rooms,
+      totalRooms: totalCount,
+      priceRange,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        limit
+      }
+    };
   }
 } 
