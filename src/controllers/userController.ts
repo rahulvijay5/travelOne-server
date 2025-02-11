@@ -118,3 +118,24 @@ export const getCurrentManagingHotel = async (
     res.status(500).json({ error: "Error fetching current managing hotel" });
   }
 };
+
+export const getUserProfile = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { userId } = req.params;
+
+  try {
+    console.log("User ID: ", userId);
+    const user = await userService.getUserProfile(userId);
+    console.log("User profile: ", user);
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user profile:", error);
+    res.status(500).json({ error: "Error fetching user profile" });
+  }
+};

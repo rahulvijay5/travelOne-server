@@ -92,7 +92,7 @@ model HotelRules {
   ownRestaurant Boolean @default(false)
   checkInTime  Int
   checkOutTime Int
-  guestInfoNeeded Boolean @default(true)
+  guestInfoNeeded Boolean @default(false)
   smokingAllowed Boolean @default(false)
   alcoholAllowed Boolean @default(false)
   eventsAllowed Boolean @default(false)

@@ -1,6 +1,6 @@
-import { CreateUserData } from '@/types';
-import prisma from '../config/database';
-import { Hotel, Role, User } from '@prisma/client';
+import { CreateUserData } from "@/types";
+import prisma from "../config/database";
+import { Hotel, Role, User } from "@prisma/client";
 
 export class UserService {
   async createUser(userData: CreateUserData): Promise<User> {
@@ -9,20 +9,20 @@ export class UserService {
         OR: [
           { phoneNumber: userData.phoneNumber },
           { email: userData.email },
-          { clerkId: userData.clerkId }
-        ]
-      }
+          { clerkId: userData.clerkId },
+        ],
+      },
     });
 
     if (existingUser) {
-      throw new Error('User already exists');
+      throw new Error("User already exists");
     }
 
     return prisma.user.create({
       data: {
         ...userData,
-        role: userData.role || Role.CUSTOMER
-      }
+        role: userData.role || Role.CUSTOMER,
+      },
     });
   }
 
@@ -30,18 +30,36 @@ export class UserService {
     return prisma.user.findMany({
       where: {
         OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
-          { phoneNumber: { contains: query } }
-        ]
-      }
+          { name: { contains: query, mode: "insensitive" } },
+          { email: { contains: query, mode: "insensitive" } },
+          { phoneNumber: { contains: query } },
+        ],
+      },
     });
   }
 
   async getUserByClerkId(clerkId: string): Promise<User | null> {
-    console.log("FInding user in db by clerkId: ", clerkId);
+    console.log("Finding user in db by clerkId: ", clerkId);
     const user = await prisma.user.findUnique({
-      where: { clerkId:clerkId }
+      where: { clerkId: clerkId },
+      include: {
+        bookings: {
+          include: {
+            hotel: {
+              select: {
+                hotelName: true,
+                hotelImages: true,
+                code: true,
+              },
+            },
+          },
+
+          orderBy: {
+            checkIn: "desc",
+          },
+          take: 5,
+        },
+      },
     });
     console.log("User found: ", user);
     return user;
@@ -50,15 +68,53 @@ export class UserService {
   async updateUserRole(clerkId: string, role: Role): Promise<User> {
     return prisma.user.update({
       where: { clerkId: clerkId },
-      data: { role }
+      data: { role },
     });
   }
 
   async getCurrentManagingHotel(userId: string): Promise<Hotel | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { managedHotels: true }
+      include: { managedHotels: true },
     });
     return user?.managedHotels[0] || null;
   }
-} 
+
+  async getUserProfile(userId: string): Promise<User | null> {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        bookings: {
+          select:{
+            hotel:{
+              select:{
+                hotelName: true,
+                code: true,
+              }
+            },
+            status: true,
+            checkIn: true,
+            checkOut: true,
+            guests: true,
+          },
+          orderBy: {
+            checkIn: "desc",
+          },
+          take: 6,
+        },
+        managedHotels:{
+          select:{
+            hotelName: true,
+            code: true,
+          }
+        },
+        ownedHotels:{
+          select:{
+            hotelName: true,
+            code: true,
+          }
+        }
+      }
+    });
+  }
+}

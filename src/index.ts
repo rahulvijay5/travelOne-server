@@ -11,6 +11,7 @@ import hotelRoutes from './routes/hotelRoutes';
 import roomRoutes from './routes/roomRoutes';
 import bookingRoutes from './routes/bookingRoutes';
 import imageRoutes from './routes/imageRoutes';
+import documentRoutes from './routes/documentRoutes';
 
 dotenv.config();
 const app: Express = express();
@@ -30,6 +31,7 @@ app.use('/api/hotels', hotelRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/images', imageRoutes);
+app.use('/api/documents', documentRoutes);
 
 app.get("/status",(req,res)=>{
   res.json({message:"Server is working completely fine. GO ahead!"})

@@ -1,5 +1,5 @@
 import express from 'express';
-import { createUser, searchUsers, updateUserRole, getUserByClerkId, getCurrentManagingHotel } from '../controllers/userController';
+import { createUser, searchUsers, updateUserRole, getUserProfile, getUserByClerkId, getCurrentManagingHotel } from '../controllers/userController';
 import { requireAuth } from '@clerk/express';
 
 const router = express.Router();
@@ -105,8 +105,33 @@ router.post('/update-role', requireAuth(), updateUserRole);
  */
 router.get('/search', requireAuth(), searchUsers);
 
-
+/**
+ * @swagger
+ * /api/users/currentManagingHotel/{userId}:
+ *   get:
+ *     summary: Get the current managing hotel for a user
+ *     tags: [Users]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: userId of the user
+ *     responses:
+ *       200:
+ *         description: Current managing hotel details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Hotel'
+ *       404:
+ *         description: User not found
+ */
 router.get('/currentManagingHotel/:userId', requireAuth(), getCurrentManagingHotel);
+
 /**
  * @swagger
  * /api/users/{clerkId}:
@@ -133,5 +158,7 @@ router.get('/currentManagingHotel/:userId', requireAuth(), getCurrentManagingHot
  *         description: User not found
  */
 router.get('/:clerkId', requireAuth(), getUserByClerkId);
+
+router.get('/user-profile/:userId', requireAuth(), getUserProfile);
 
 export default router; 
