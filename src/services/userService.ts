@@ -61,7 +61,6 @@ export class UserService {
         },
       },
     });
-    console.log("User found: ", user);
     return user;
   }
 

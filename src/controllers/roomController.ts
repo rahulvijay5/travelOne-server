@@ -113,7 +113,7 @@ export const getHotelRooms = async (
   try {
     const { hotelId } = req.params;
     const rooms = await roomService.getHotelRooms(hotelId);
-    console.log("Got hotel rooms: ", rooms);
+    console.log(`Got hotel rooms for hotel ${hotelId}`);
     if (!rooms) {
       res.status(404).json({ error: "Rooms not found" });
       return;
@@ -270,7 +270,7 @@ export const getAvailableRooms = async (
       page: parsedPage,
       limit: parsedLimit,
     });
-    console.log("Available rooms: ", result);
+    console.log("Available rooms have been fetched");
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching available rooms:", error);

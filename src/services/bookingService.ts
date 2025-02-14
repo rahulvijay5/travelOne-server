@@ -15,14 +15,21 @@ import {
   UpdateBookingData,
   UpdatePaymentData,
 } from "@/types";
-import { sendPushNotifications } from "../config/sendPushNotifications";
 import NotificationService from "./notificationService";
+import { getCancellationQueue } from "@/queues/PendingBookingQueue";
 
 const notificationService = new NotificationService();
 
 export class BookingService {
   async createBooking(data: CreateBookingData): Promise<Booking> {
+    console.log('🏁 Starting booking creation process...');
+    
     // Check if room is available for the given dates
+    console.log(`🔍 Checking room ${data.roomId} availability for dates:`, {
+      checkIn: data.checkIn,
+      checkOut: data.checkOut
+    });
+    
     const existingBooking = await prisma.booking.findFirst({
       where: {
         roomId: data.roomId,
@@ -45,15 +52,20 @@ export class BookingService {
     });
 
     if (existingBooking) {
+      console.log('❌ Room is already booked for the selected dates');
       throw new Error("Room is not available for the selected dates");
     }
 
+    console.log('✅ Room is available for the selected dates');
+
+    console.log('🏨 Updating room status to BOOKED');
     await prisma.room.update({
       where: { id: data.roomId },
       data: { roomStatus: RoomStatus.BOOKED },
     });
 
     // Create booking with payment
+    console.log('📝 Creating booking record with payment information');
     const booking = await prisma.booking.create({
       data: {
         hotelId: data.hotelId,
@@ -84,42 +96,42 @@ export class BookingService {
       },
     });
 
+    console.log(`✅ Booking created successfully with ID: ${booking.id}`);
+
     const hotel = booking.hotel;
     const managerIds: string[] = hotel.managers.map((manager) => manager.id);
 
-    console.log("managerIds", managerIds);
+    console.log(`📱 Found ${managerIds.length} managers to notify`);
+
     if (data.createdBy === BookingCreatedBy.CUSTOMER) {
-      console.log("Booking created by customer");
-      console.log("Using notification service to send booking notification");
+      console.log('👤 Booking created by customer, sending notifications and scheduling auto-cancellation');
+      
+      console.log('📤 Sending booking notification to managers');
       await notificationService.sendBookingNotification(
         booking.id,
         booking.hotelId,
         BookingNotificationType.CREATED
       );
+
+      console.log('⏰ Scheduling auto-cancellation job');
+        await getCancellationQueue().add(
+        'cancelBooking',
+        { bookingId: booking.id },
+        { 
+          delay: 2 * 60 * 1000, // 4 minutes for testing, change to 15 minutes in production
+          attempts: 3,
+          backoff: {
+            type: 'exponential',
+            delay: 1000
+          }
+        }
+      );
+      console.log(`✅ Auto-cancellation scheduled for booking ID: ${booking.id}`);
     } else {
-      console.log("Booking created by manager, so no notifications to managers");
+      console.log('👥 Booking created by manager, skipping notifications and auto-cancellation');
     }
 
-    // console.log("Using booking service to send push notifications directly");
-    // // Fetch push tokens of all managers
-    // const pushTokens = await prisma.pushToken.findMany({
-    //   where: {
-    //     userId: {
-    //       in: managerIds,
-    //     },
-    //   },
-    // });
-
-    // const tokens = pushTokens.map((token) => token.token);
-
-    // // Define notification message
-    // const title = 'New Booking Created';
-    // const body = `A new booking has been made for hotel "${hotel.hotelName}".`;
-    // const notfsData = { bookingId: booking.id };
-
-    // // Send push notifications
-    // await sendPushNotifications(tokens, title, body, notfsData);
-
+    console.log('🏁 Booking creation process completed successfully');
     return booking;
   }
 
@@ -137,18 +149,34 @@ export class BookingService {
 
   async updateBooking(
     bookingId: string,
-    data: UpdateBookingData
+    updateData: UpdateBookingData
   ): Promise<Booking> {
-    return prisma.booking.update({
+    const updatedBooking = await prisma.booking.update({
       where: { id: bookingId },
-      data,
+      data: updateData,
       include: {
         hotel: true,
         room: true,
         customer: true,
         payment: true,
       },
-    });
+      });
+
+      if (
+        updateData.status === BookingStatus.CONFIRMED ||
+        updateData.status === BookingStatus.CANCELLED
+      ) {
+        // Find and remove the job from the queue
+        const jobs = await getCancellationQueue().getJobs(['delayed']);
+        for (const job of jobs) {
+          if (job.data.bookingId === bookingId) {
+            await job.remove();
+            console.log(`Removed cancellation job for booking ID: ${bookingId}`);
+          }
+        }
+      }
+
+    return updatedBooking;
   }
 
   async makeCheckout(bookingId: string): Promise<Booking> {
@@ -195,19 +223,29 @@ export class BookingService {
     });
   }
 
-  async cancelBooking(bookingId: string): Promise<Booking> {
-    return prisma.booking.update({
-      where: { id: bookingId },
-      data: {
-        status: BookingStatus.CANCELLED,
-      },
-      include: {
-        hotel: true,
-        room: true,
-        customer: true,
-        payment: true,
-      },
-    });
+  async cancelBooking(bookingId: string): Promise<Booking | null> {
+    const booking = await this.updateBooking(bookingId, { status: BookingStatus.CANCELLED });
+
+    if (booking) {
+      // Update room status to AVAILABLE
+      await prisma.room.update({
+        where: { id: booking.roomId },
+        data: { roomStatus: RoomStatus.AVAILABLE },
+      });
+
+      // Update payment status to FAILED if payment exists
+      // if (booking.payment) {
+      //   await prisma.payment.update({
+      //     where: { id: booking.payment.id },
+      //     data: { status: PaymentStatus.FAILED },
+      //   });
+      // }
+
+      // Send cancellation notification
+      await notificationService.sendBookingCancelNotification(bookingId);
+    }
+
+    return booking;
   }
 
   async getUserBookings(userId: string): Promise<Booking[]> {

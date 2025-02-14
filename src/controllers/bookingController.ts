@@ -20,8 +20,8 @@ export const createBooking = async (
     } else {
       console.error("Error creating booking:", error);
       res.status(500).json({ error: "Error creating booking" });
-    }
-  }
+      }
+      }
 };
 
 export const getBookingById = async (
@@ -184,10 +184,7 @@ export const getFilteredHotelBookings = async (
       }
     }
 
-    console.log("Filters: ", filters);
-
     const result = await bookingService.getFilteredHotelBookings(hotelId, filters);
-    console.log("Result: ", result.data);
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching filtered hotel bookings:", error);

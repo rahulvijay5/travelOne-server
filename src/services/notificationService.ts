@@ -236,6 +236,92 @@ class NotificationService {
       throw new Error("Failed to fetch user notifications");
     }
   }
+
+  async sendBookingCancelNotification(bookingId: string): Promise<void> {
+    try {
+      const booking = await prisma.booking.findUnique({
+        where: { id: bookingId },
+        include: {
+          hotel: {
+            include: {
+              managers: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  phoneNumber: true,
+                },
+              },
+            },
+          },
+          room: {
+            select: {
+              roomNumber: true,
+            },
+          },
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phoneNumber: true,
+            },
+          },
+        },
+      });
+
+      if (!booking) {
+        throw new Error("Booking not found");
+      }
+
+      const recipientIds = [
+        // ...booking.hotel.owner.map(owner => owner.id),
+        ...booking.hotel.managers.map(manager => manager.id),
+        booking.customer.id,
+      ];
+
+      const pushTokens = await prisma.pushToken.findMany({
+        where: {
+          userId: {
+            in: recipientIds,
+          },
+        },
+      });
+
+      const tokens = pushTokens.map(token => token.token);
+
+      if (tokens.length === 0) {
+        console.log("No push tokens found for notification recipients");
+        return;
+      }
+
+      const title = 'Booking Automatically Cancelled 🚫';
+      const body = `Your booking for Room ${booking.room.roomNumber} has been automatically cancelled due to inactivity.`;
+      const data: BookingNotificationData = { bookingId, type: BookingNotificationType.CANCELLED };
+
+      await sendPushNotifications(tokens, title, body, data);
+
+      // Log the notification in the database
+      await prisma.notification.create({
+        data: {
+          title,
+          body,
+          type: BookingNotificationType.CANCELLED,
+          bookingId: booking.id,
+          hotelId: booking.hotelId,
+          recipients: {
+            connect: recipientIds.map(id => ({ id })),
+          },
+        },
+      });
+
+      console.log(`Cancellation notification sent for booking ID: ${booking.id}`);
+    } catch (error) {
+      console.error('Error sending cancellation notification:', error);
+    }
+  }
 }
+
+
 
 export default NotificationService;

@@ -62,7 +62,7 @@ export const getUserByClerkId = async (
     const { clerkId } = req.params;
     const user = await userService.getUserByClerkId(clerkId);
 
-    console.log("User found: ", user);
+
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;
@@ -128,7 +128,7 @@ export const getUserProfile = async (
   try {
     console.log("User ID: ", userId);
     const user = await userService.getUserProfile(userId);
-    console.log("User profile: ", user);
+    console.log(`User profile for user ${user?.name} has been fetched successfully!`);
     if (!user) {
       res.status(404).json({ error: "User not found" });
       return;

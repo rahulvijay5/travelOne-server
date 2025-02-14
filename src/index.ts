@@ -13,6 +13,7 @@ import bookingRoutes from './routes/bookingRoutes';
 import imageRoutes from './routes/imageRoutes';
 import documentRoutes from './routes/documentRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import { getCancellationQueue } from "./queues/PendingBookingQueue";
 dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 3002;
@@ -39,6 +40,21 @@ app.use('/api/notifications', notificationRoutes);
 app.get("/status",(req,res)=>{
   res.json({message:"Server is working completely fine. GO ahead!"})
 })
+
+const shutdown = async () => {
+  console.log('Shutting down gracefully...');
+  await getCancellationQueue().close();
+  process.exit(0);
+};
+
+process.on('SIGINT', () => {
+  console.log('Received SIGINT. Initiating shutdown...');
+  shutdown();
+});
+process.on('SIGTERM', () => {
+  console.log('Received SIGTERM. Initiating shutdown...');
+  shutdown();
+});
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
