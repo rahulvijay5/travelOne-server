@@ -12,14 +12,15 @@ import roomRoutes from './routes/roomRoutes';
 import bookingRoutes from './routes/bookingRoutes';
 import imageRoutes from './routes/imageRoutes';
 import documentRoutes from './routes/documentRoutes';
-
+import notificationRoutes from './routes/notificationRoutes';
 dotenv.config();
 const app: Express = express();
 const port = process.env.PORT || 3002;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(clerkMiddleware());
 
 // Swagger Documentation
@@ -32,6 +33,8 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/documents', documentRoutes);
+
+app.use('/api/notifications', notificationRoutes);
 
 app.get("/status",(req,res)=>{
   res.json({message:"Server is working completely fine. GO ahead!"})

@@ -7,6 +7,7 @@ interface ImageData {
     base64?: string;
     uri?: string;
     type?: string;
+    data?: string;  // For direct base64 data
 }
 
 class ImageService {
@@ -52,34 +53,49 @@ class ImageService {
     }
 
     private async getImageBuffer(image: ImageData): Promise<Buffer> {
-        if (image.base64) {
-            return Buffer.from(image.base64, 'base64');
+        if (image.data) {
+            // Handle direct base64 data
+            return Buffer.from(image.data, 'base64');
+        } else if (image.base64) {
+            // Handle base64 with potential header
+            const base64Data = image.base64.includes('base64,') 
+                ? image.base64.split('base64,')[1] 
+                : image.base64;
+            return Buffer.from(base64Data, 'base64');
         } else if (image.uri) {
-            // Handle file URI (local file system)
-            const filePath = decodeURIComponent(image.uri.replace('file://', ''));
-            return fs.readFile(filePath);
+            try {
+                // Handle file URI (local file system)
+                const filePath = decodeURIComponent(image.uri.replace('file://', ''));
+                return fs.readFile(filePath);
+            } catch (error) {
+                console.error('Error reading file:', error);
+                throw new Error('Failed to read image file');
+            }
         }
-        throw new Error('Either base64 or uri must be provided');
+        throw new Error('Either base64, data, or uri must be provided');
     }
 
     async uploadImages(images: ImageData[], folderName: string): Promise<string[]> {
-        const uploadPromises = images.map(async (image) => {
+        // Sanitize folder name
+        const sanitizedFolderName = folderName.replace(/[^a-zA-Z0-9-_]/g, '');
+        
+        const uploadPromises = images.map(async (image, index) => {
             try {
                 const imageBuffer = await this.getImageBuffer(image);
                 const compressedImageBuffer = await this.compressImage(imageBuffer);
-                const fileName = `${folderName}/${randomUUID()}.jpg`;
+                const fileName = `${sanitizedFolderName}/${randomUUID()}.jpg`;
 
                 const uploadParams = {
                     Bucket: this.BUCKET_NAME,
                     Key: fileName,
                     Body: compressedImageBuffer,
-                    ContentType: 'image/jpeg',
+                    ContentType: image.type || 'image/jpeg',
                 };
 
                 await this.s3Client.send(new PutObjectCommand(uploadParams));
                 return `${process.env.CLOUDFLARE_R2_PUBLIC_URL}/${fileName}`;
             } catch (error) {
-                console.error('Error processing image:', error);
+                console.error(`Error processing image ${index}:`, error);
                 throw error;
             }
         });

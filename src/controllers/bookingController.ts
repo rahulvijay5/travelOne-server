@@ -36,7 +36,7 @@ export const getBookingById = async (
       res.status(404).json({ error: "Booking not found" });
       return;
     }
-    console.log("Booking: ", booking);
+    // console.log("Booking: ", booking);
     res.json(booking);
   } catch (error) {
     console.error("Error fetching booking:", error);
@@ -255,7 +255,7 @@ export const makeBookingCheckout = async (
   try {
     const { bookingId } = req.params;
     const booking = await bookingService.makeCheckout(bookingId);
-    console.log("Booking: ", booking);
+    console.log("Checked out booking: ", booking);
     res.status(200).json({
       message: "Booking checked out successfully",
       booking

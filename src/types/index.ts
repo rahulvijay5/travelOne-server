@@ -44,6 +44,11 @@ export interface HotelRulesData {
   minimumAgeForCheckIn: number;
 }
 
+export enum BookingCreatedBy {
+  MANAGER = "MANAGER",
+  CUSTOMER = "CUSTOMER",
+}
+
 // Booking
 export interface CreateBookingData {
   hotelId: string;
@@ -59,6 +64,7 @@ export interface CreateBookingData {
     status?: PaymentStatus;
     transactionId?: string;
   };
+  createdBy: BookingCreatedBy;
 }
 
 export interface UpdateBookingData {
@@ -129,4 +135,16 @@ export interface BookingFilters {
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
+}
+
+export enum BookingNotificationType {
+  CREATED = 'created',
+  UPDATED = 'updated',
+  CANCELLED = 'cancelled',
+  COMPLETED = 'completed',
+}
+
+export interface BookingNotificationData {
+  bookingId: string;
+  type: BookingNotificationType;
 }

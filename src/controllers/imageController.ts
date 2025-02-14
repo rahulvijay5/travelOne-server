@@ -13,13 +13,16 @@ export const uploadImages = async (req: Request, res: Response): Promise<void> =
         let imagesToUpload = [];
 
         if (images && Array.isArray(images)) {
-            // Handle base64 images
-            const invalidImages = images.filter(img => !img.base64);
-            if (invalidImages.length > 0) {
-                res.status(400).json({ error: 'All images must have base64 data' });
-                return;
-            }
-            imagesToUpload = images;
+            // Handle both new format (data property) and old format (base64 property)
+            imagesToUpload = images.map(img => {
+                if (img.data) {
+                    return { data: img.data, type: img.type || 'image/jpeg' };
+                } else if (img.base64) {
+                    return { base64: img.base64, type: img.type || 'image/jpeg' };
+                } else {
+                    throw new Error('Invalid image format');
+                }
+            });
         } else if (imageUris && Array.isArray(imageUris)) {
             // Handle image URIs
             imagesToUpload = imageUris.map(uri => ({ uri }));

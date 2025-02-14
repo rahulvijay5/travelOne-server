@@ -49,6 +49,30 @@ model User {
   ownedHotels     Hotel[]    @relation("HotelOwner")
   managedHotels   Hotel[]    @relation("HotelManager")
   bookings        Booking[]
+  pushTokens      PushToken[]
+  notifications   Notification[]
+}
+
+model PushToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  type      String   // created, updated, cancelled, completed
+  bookingId String?
+  hotelId   String
+  booking   Booking? @relation(fields: [bookingId], references: [id])
+  hotel     Hotel    @relation(fields: [hotelId], references: [id])
+  recipients User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Hotel {
@@ -73,6 +97,7 @@ model Hotel {
   managers    User[]     @relation("HotelManager")
   rooms       Room[]
   bookings    Booking[]
+  notifications Notification[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -131,8 +156,9 @@ model Booking {
   guests      Int
   status      BookingStatus @default(PENDING)
   
-  // Payment details
+  // Relations
   payment     Payment?
+  notifications Notification[]
 
   bookingTime DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

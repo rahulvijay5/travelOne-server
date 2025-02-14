@@ -92,6 +92,7 @@ export class UserService {
                 code: true,
               }
             },
+            id: true,
             status: true,
             checkIn: true,
             checkOut: true,

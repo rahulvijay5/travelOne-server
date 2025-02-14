@@ -1,6 +1,24 @@
-import prisma from '../config/database';
-import { Booking, BookingStatus, Payment, PaymentStatus, RoomStatus } from '@prisma/client';
-import { BookingFilters, CreateBookingData, FilteredBookingResponse, UpdateBookingData, UpdatePaymentData } from '@/types';
+import prisma from "../config/database";
+import {
+  Booking,
+  BookingStatus,
+  Payment,
+  PaymentStatus,
+  RoomStatus,
+} from "@prisma/client";
+import {
+  BookingFilters,
+  BookingNotificationType,
+  BookingCreatedBy,
+  CreateBookingData,
+  FilteredBookingResponse,
+  UpdateBookingData,
+  UpdatePaymentData,
+} from "@/types";
+import { sendPushNotifications } from "../config/sendPushNotifications";
+import NotificationService from "./notificationService";
+
+const notificationService = new NotificationService();
 
 export class BookingService {
   async createBooking(data: CreateBookingData): Promise<Booking> {
@@ -13,30 +31,30 @@ export class BookingService {
           {
             AND: [
               { checkIn: { lte: data.checkIn } },
-              { checkOut: { gte: data.checkIn } }
-            ]
+              { checkOut: { gte: data.checkIn } },
+            ],
           },
           {
             AND: [
               { checkIn: { lte: data.checkOut } },
-              { checkOut: { gte: data.checkOut } }
-            ]
-          }
-        ]
-      }
+              { checkOut: { gte: data.checkOut } },
+            ],
+          },
+        ],
+      },
     });
 
     if (existingBooking) {
-      throw new Error('Room is not available for the selected dates');
+      throw new Error("Room is not available for the selected dates");
     }
 
-    const roomStatus = await prisma.room.update({
+    await prisma.room.update({
       where: { id: data.roomId },
-      data: { roomStatus: RoomStatus.BOOKED }
+      data: { roomStatus: RoomStatus.BOOKED },
     });
 
     // Create booking with payment
-    return prisma.booking.create({
+    const booking = await prisma.booking.create({
       data: {
         hotelId: data.hotelId,
         roomId: data.roomId,
@@ -45,20 +63,64 @@ export class BookingService {
         checkOut: data.checkOut,
         guests: data.guests,
         status: data.status || BookingStatus.PENDING,
-        payment: data.payment ? {
-          create: {
-            ...data.payment,
-            status: data.payment.status || PaymentStatus.PENDING
-          }
-        } : undefined
+        payment: data.payment
+          ? {
+              create: {
+                ...data.payment,
+                status: data.payment.status || PaymentStatus.PENDING,
+              },
+            }
+          : undefined,
       },
       include: {
-        hotel: true,
+        hotel: {
+          include: {
+            managers: true,
+          },
+        },
         room: true,
         customer: true,
-        payment: true
-      }
+        payment: true,
+      },
     });
+
+    const hotel = booking.hotel;
+    const managerIds: string[] = hotel.managers.map((manager) => manager.id);
+
+    console.log("managerIds", managerIds);
+    if (data.createdBy === BookingCreatedBy.CUSTOMER) {
+      console.log("Booking created by customer");
+      console.log("Using notification service to send booking notification");
+      await notificationService.sendBookingNotification(
+        booking.id,
+        booking.hotelId,
+        BookingNotificationType.CREATED
+      );
+    } else {
+      console.log("Booking created by manager, so no notifications to managers");
+    }
+
+    // console.log("Using booking service to send push notifications directly");
+    // // Fetch push tokens of all managers
+    // const pushTokens = await prisma.pushToken.findMany({
+    //   where: {
+    //     userId: {
+    //       in: managerIds,
+    //     },
+    //   },
+    // });
+
+    // const tokens = pushTokens.map((token) => token.token);
+
+    // // Define notification message
+    // const title = 'New Booking Created';
+    // const body = `A new booking has been made for hotel "${hotel.hotelName}".`;
+    // const notfsData = { bookingId: booking.id };
+
+    // // Send push notifications
+    // await sendPushNotifications(tokens, title, body, notfsData);
+
+    return booking;
   }
 
   async getBookingById(bookingId: string): Promise<Booking | null> {
@@ -68,12 +130,15 @@ export class BookingService {
         hotel: true,
         room: true,
         customer: true,
-        payment: true
-      }
+        payment: true,
+      },
     });
   }
 
-  async updateBooking(bookingId: string, data: UpdateBookingData): Promise<Booking> {
+  async updateBooking(
+    bookingId: string,
+    data: UpdateBookingData
+  ): Promise<Booking> {
     return prisma.booking.update({
       where: { id: bookingId },
       data,
@@ -81,8 +146,8 @@ export class BookingService {
         hotel: true,
         room: true,
         customer: true,
-        payment: true
-      }
+        payment: true,
+      },
     });
   }
 
@@ -92,16 +157,16 @@ export class BookingService {
       where: { id: bookingId },
       include: {
         room: true,
-        payment: true
-      }
+        payment: true,
+      },
     });
 
     if (!currentBooking) {
-      throw new Error('Booking not found');
+      throw new Error("Booking not found");
     }
 
     if (currentBooking.status !== BookingStatus.CONFIRMED) {
-      throw new Error('Only confirmed bookings can be checked out');
+      throw new Error("Only confirmed bookings can be checked out");
     }
 
     // Use a transaction to ensure both booking and room status are updated
@@ -110,7 +175,7 @@ export class BookingService {
       const updatedBooking = await tx.booking.update({
         where: { id: bookingId },
         data: {
-          status: BookingStatus.COMPLETED
+          status: BookingStatus.COMPLETED,
         },
         // include: {
         //   hotel: true,
@@ -123,7 +188,7 @@ export class BookingService {
       // Update room status to AVAILABLE
       await tx.room.update({
         where: { id: currentBooking.roomId },
-        data: { roomStatus: RoomStatus.AVAILABLE }
+        data: { roomStatus: RoomStatus.AVAILABLE },
       });
 
       return updatedBooking;
@@ -134,79 +199,85 @@ export class BookingService {
     return prisma.booking.update({
       where: { id: bookingId },
       data: {
-        status: BookingStatus.CANCELLED
+        status: BookingStatus.CANCELLED,
       },
       include: {
         hotel: true,
         room: true,
         customer: true,
-        payment: true
-      }
+        payment: true,
+      },
     });
   }
 
   async getUserBookings(userId: string): Promise<Booking[]> {
     return prisma.booking.findMany({
       where: {
-        customerId: userId
+        customerId: userId,
       },
       include: {
         hotel: true,
         room: true,
-        payment: true
+        payment: true,
       },
       orderBy: {
-        checkIn: 'desc'
-      }
+        checkIn: "desc",
+      },
     });
   }
 
   async getHotelBookings(hotelId: string): Promise<Booking[]> {
     return prisma.booking.findMany({
       where: {
-        hotelId
+        hotelId,
       },
       include: {
         room: true,
         customer: true,
-        payment: true
+        payment: true,
       },
       orderBy: {
-        checkIn: 'desc'
-      }
+        checkIn: "desc",
+      },
     });
   }
 
-  async getHotelBookingsByStatus(hotelId: string, status: BookingStatus): Promise<Booking[]> {
+  async getHotelBookingsByStatus(
+    hotelId: string,
+    status: BookingStatus
+  ): Promise<Booking[]> {
     return prisma.booking.findMany({
       where: {
         hotelId,
-        status
+        status,
       },
       include: {
         room: true,
         customer: true,
-        payment: true
+        payment: true,
       },
       orderBy: {
-        checkIn: 'desc'
-      }
+        checkIn: "desc",
+      },
     });
   }
 
-  async updatePaymentStatus(bookingId: string, data: UpdatePaymentData): Promise<Payment> {
+  async updatePaymentStatus(
+    bookingId: string,
+    data: UpdatePaymentData
+  ): Promise<Payment> {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { payment: true }
+      include: { payment: true },
     });
 
     if (!booking?.payment) {
-      throw new Error('No payment found for this booking');
+      throw new Error("No payment found for this booking");
     }
 
     return prisma.payment.update({
       where: { id: booking.payment.id },
-      data
+      data,
     });
   }
 
@@ -220,78 +291,80 @@ export class BookingService {
       startDate,
       endDate,
       roomStatus,
-      sortBy = 'bookingTime',
-      sortOrder = 'desc',
+      sortBy = "bookingTime",
+      sortOrder = "desc",
       page = 1,
-      limit = 10
+      limit = 10,
     } = filters;
 
     // Calculate date ranges based on timeRange
     let dateFilter: any = {};
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     switch (timeRange) {
-      case 'today':
+      case "today":
         dateFilter = {
           checkIn: {
             gte: today,
-            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-          }
+            lt: new Date(today.getTime() + 24 * 60 * 60 * 1000),
+          },
         };
         break;
-      case 'yesterday':
+      case "yesterday":
         dateFilter = {
           checkIn: {
             gte: new Date(today.getTime() - 24 * 60 * 60 * 1000),
-            lt: today
-          }
+            lt: today,
+          },
         };
         break;
-      case 'thisWeek':
-        const startOfWeek = new Date(today.getTime() - today.getDay() * 24 * 60 * 60 * 1000);
+      case "thisWeek":
+        const startOfWeek = new Date(
+          today.getTime() - today.getDay() * 24 * 60 * 60 * 1000
+        );
         dateFilter = {
           OR: [
             {
               checkIn: {
                 gte: startOfWeek,
-                lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
-              }
+                lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000),
+              },
             },
             {
               checkOut: {
                 gte: startOfWeek,
-                lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000)
-              }
-            }
-          ]
+                lt: new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000),
+              },
+            },
+          ],
         };
         break;
-      case 'thisMonth':
+      case "thisMonth":
         dateFilter = {
           checkIn: {
             gte: new Date(now.getFullYear(), now.getMonth(), 1),
-            lt: new Date(now.getFullYear(), now.getMonth() + 1, 1)
-          }
+            lt: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+          },
         };
         break;
-      case 'custom':
+      case "custom":
         if (startDate && endDate) {
           dateFilter = {
             OR: [
               {
                 checkIn: {
                   gte: startDate,
-                  lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
-                }
+                  lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000),
+                },
               },
               {
                 checkOut: {
                   gte: startDate,
-                  lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000)
-                }
-              }
-            ]
+                  lt: new Date(endDate.getTime() + 24 * 60 * 60 * 1000),
+                },
+              },
+            ],
           };
         }
         break;
@@ -302,7 +375,7 @@ export class BookingService {
       hotelId,
       ...(status && { status }),
       ...(roomStatus && { room: { roomStatus } }),
-      ...dateFilter
+      ...dateFilter,
     };
 
     // Calculate pagination
@@ -310,7 +383,7 @@ export class BookingService {
 
     // Build sort order
     const orderBy: any = {
-      [sortBy]: sortOrder
+      [sortBy]: sortOrder,
     };
 
     // Execute count query and data query in parallel for better performance
@@ -325,30 +398,30 @@ export class BookingService {
               roomNumber: true,
               type: true,
               roomStatus: true,
-              price: true
-            }
+              price: true,
+            },
           },
           customer: {
             select: {
               id: true,
               name: true,
               email: true,
-              phoneNumber: true
-            }
+              phoneNumber: true,
+            },
           },
           payment: {
             select: {
               id: true,
               status: true,
               totalAmount: true,
-              paidAmount: true
-            }
-          }
+              paidAmount: true,
+            },
+          },
         },
         orderBy,
         skip,
-        take: limit
-      })
+        take: limit,
+      }),
     ]);
 
     const pages = Math.ceil(total / limit);
@@ -359,9 +432,8 @@ export class BookingService {
         total,
         pages,
         currentPage: page,
-        limit
-      }
+        limit,
+      },
     };
   }
 }
- 
