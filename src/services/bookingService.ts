@@ -118,7 +118,7 @@ export class BookingService {
         'cancelBooking',
         { bookingId: booking.id },
         { 
-          delay: 2 * 60 * 1000, // 4 minutes for testing, change to 15 minutes in production
+          delay: 15 * 60 * 1000, // 4 minutes for testing, change to 15 minutes in production
           attempts: 3,
           backoff: {
             type: 'exponential',
