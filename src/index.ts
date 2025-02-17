@@ -16,7 +16,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import { getCancellationQueue } from "./queues/PendingBookingQueue";
 dotenv.config();
 const app: Express = express();
-const port = process.env.PORT || 3002;
+import {PORT} from './config';
 
 // Middleware
 app.use(cors());
@@ -56,7 +56,7 @@ process.on('SIGTERM', () => {
   shutdown();
 });
 
-app.listen(port, () => {
-  console.log(`Server is running at http://localhost:${port}`);
-  console.log(`API Documentation available at http://localhost:${port}/docs`);
+app.listen(PORT, () => {
+  console.log(`Server is running at http://localhost:${PORT}`);
+  console.log(`API Documentation available at http://localhost:${PORT}/docs`);
 });

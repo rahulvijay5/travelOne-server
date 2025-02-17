@@ -39,7 +39,7 @@ export class UserService {
   }
 
   async getUserByClerkId(clerkId: string): Promise<User | null> {
-    console.log("Finding user in db by clerkId: ", clerkId);
+    console.log("Finding user in db by clerkId:",clerkId);
     const user = await prisma.user.findUnique({
       where: { clerkId: clerkId },
       include: {
@@ -61,6 +61,7 @@ export class UserService {
         },
       },
     });
+    console.log("User found");
     return user;
   }
 

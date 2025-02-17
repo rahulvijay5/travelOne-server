@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { documentService } from '../services/documentService';
+import { R2PublicUrl } from '@/config';
 
 export const uploadDocument = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -65,8 +66,7 @@ export const deleteDocument = async (req: Request, res: Response): Promise<void>
         }
 
         // Validate if the URL is from our Cloudflare R2 bucket
-        const r2PublicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL;
-        if (!r2PublicUrl || !documentUrl.startsWith(r2PublicUrl)) {
+        if (!R2PublicUrl || !documentUrl.startsWith(R2PublicUrl)) {
             res.status(400).json({ 
                 error: 'Invalid document URL. URL must be from our storage system.' 
             });

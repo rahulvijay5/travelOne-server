@@ -126,7 +126,7 @@ export class BookingService {
           }
         }
       );
-      console.log(`✅ Auto-cancellation scheduled for booking ID: ${booking.id}`);
+      console.log(`✅ Auto-cancellation scheduled for booking ID: ${booking.id} at ${new Date().toLocaleString()}`);
     } else {
       console.log('👥 Booking created by manager, skipping notifications and auto-cancellation');
     }
@@ -162,19 +162,19 @@ export class BookingService {
       },
       });
 
-      if (
-        updateData.status === BookingStatus.CONFIRMED ||
-        updateData.status === BookingStatus.CANCELLED
-      ) {
-        // Find and remove the job from the queue
-        const jobs = await getCancellationQueue().getJobs(['delayed']);
-        for (const job of jobs) {
-          if (job.data.bookingId === bookingId) {
-            await job.remove();
-            console.log(`Removed cancellation job for booking ID: ${bookingId}`);
+        if (
+          updateData.status === BookingStatus.CONFIRMED ||
+          updateData.status === BookingStatus.CANCELLED
+        ) {
+          // Find and remove the job from the queue
+          const jobs = await getCancellationQueue().getJobs(['delayed']);
+          for (const job of jobs) {
+            if (job.data.bookingId === bookingId) {
+              await job.remove();
+              console.log(`Removed cancellation job for booking ID: ${bookingId}`);
+            }
           }
         }
-      }
 
     return updatedBooking;
   }
