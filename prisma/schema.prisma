@@ -98,6 +98,7 @@ model Hotel {
   rooms       Room[]
   bookings    Booking[]
   notifications Notification[]
+  bookingAnalytics BookingAnalytics[]
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -176,3 +177,19 @@ model Payment {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 } 
+
+model BookingAnalytics {
+  id             String   @id @default(uuid())
+  hotelId        String
+  date           DateTime
+  totalBookings  Int
+  canceledBookings Int
+  totalRevenue   Float
+  averageRevenue Float
+  occupancyRate  Float
+  createdAt      DateTime @default(now())
+
+  hotel Hotel @relation(fields: [hotelId], references: [id])
+
+  @@unique([hotelId, date])
+}

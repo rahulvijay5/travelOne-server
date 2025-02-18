@@ -1,8 +1,8 @@
 export const PORT = process.env.PORT || 3002;
 
 // Redis Config
-export const RedisUrl = process.env.UPSTASH_REDIS_REST_URL;
-export const RedisPassword = process.env.UPSTASH_REDIS_PASSWORD
+export const RedisUrl = process.env.UPSTASH_REDIS_REST_URL || process.env.REDIS_URL;
+export const RedisPassword = process.env.UPSTASH_REDIS_PASSWORD || process.env.REDIS_PASSWORD;
 
 // R2 Config
 export const R2PublicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL;

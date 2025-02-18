@@ -96,7 +96,21 @@ const options = {
             status: { type: 'string', enum: ['PENDING', 'PAID', 'REFUNDED', 'FAILED'] },
             transactionId: { type: 'string' }
           }
-        }
+        },
+        BookingAnalytics: {
+          type: 'object',
+          properties: {
+            id: { type: 'string' },
+            hotelId: { type: 'string' },
+            date: { type: 'string', format: 'date-time' },
+            totalBookings: { type: 'integer' },
+            canceledBookings: { type: 'integer' },
+            totalRevenue: { type: 'number' },
+            averageRevenue: { type: 'number' },
+            occupancyRate: { type: 'number' },
+            createdAt: { type: 'string', format: 'date-time' },
+          },
+        },
       }
     }
   },
