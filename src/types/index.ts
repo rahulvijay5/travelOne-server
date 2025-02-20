@@ -2,6 +2,13 @@ import { Booking, BookingStatus, Role, RoomStatus } from "@prisma/client";
 
 import { PaymentStatus } from "@prisma/client";
 
+export type Timeframe = 'today' | 'tomorrow' | 'thisWeek' | 'currentMonth';
+
+export interface DateRange {
+  startDate: Date;
+  endDate: Date;
+}
+
 // Hotel
 export interface CreateHotelData {
   hotelName: string;

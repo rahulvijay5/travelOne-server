@@ -162,6 +162,16 @@ export class BookingService {
       },
       });
 
+      if (updateData.status === BookingStatus.CANCELLED) {
+        // Update payment status to FAILED if payment exists
+        if (updatedBooking.payment) {
+          await prisma.payment.update({
+            where: { id: updatedBooking.payment.id },
+            data: { status: PaymentStatus.FAILED, paidAmount: 0 }, 
+          });
+        }
+      }
+
         if (
           updateData.status === BookingStatus.CONFIRMED ||
           updateData.status === BookingStatus.CANCELLED
@@ -233,13 +243,13 @@ export class BookingService {
         data: { roomStatus: RoomStatus.AVAILABLE },
       });
 
-      // Update payment status to FAILED if payment exists
-      // if (booking.payment) {
-      //   await prisma.payment.update({
-      //     where: { id: booking.payment.id },
-      //     data: { status: PaymentStatus.FAILED },
-      //   });
-      // }
+        // Update payment status to FAILED if payment exists
+        // if (booking.payment) {
+        //   await prisma.payment.update({
+        //     where: { id: booking.payment.id },
+        //     data: { status: PaymentStatus.FAILED },
+        //   });
+        // }
 
       // Send cancellation notification
       await notificationService.sendBookingCancelNotification(bookingId);

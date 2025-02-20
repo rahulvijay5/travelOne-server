@@ -36,21 +36,21 @@ enum RoomStatus {
 }
 
 model User {
-  id          String    @id @default(uuid())
-  clerkId     String    @unique
+  id          String   @id @default(uuid())
+  clerkId     String   @unique
   name        String
-  email       String    @unique
-  phoneNumber String    @unique
-  role        Role      @default(CUSTOMER)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  email       String   @unique
+  phoneNumber String   @unique
+  role        Role     @default(CUSTOMER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   // Relations
-  ownedHotels     Hotel[]    @relation("HotelOwner")
-  managedHotels   Hotel[]    @relation("HotelManager")
-  bookings        Booking[]
-  pushTokens      PushToken[]
-  notifications   Notification[]
+  ownedHotels   Hotel[]        @relation("HotelOwner")
+  managedHotels Hotel[]        @relation("HotelManager")
+  bookings      Booking[]
+  pushTokens    PushToken[]
+  notifications Notification[]
 }
 
 model PushToken {
@@ -62,134 +62,133 @@ model PushToken {
 }
 
 model Notification {
-  id        String   @id @default(uuid())
-  title     String
-  body      String
-  type      String   // created, updated, cancelled, completed
-  bookingId String?
-  hotelId   String
-  booking   Booking? @relation(fields: [bookingId], references: [id])
-  hotel     Hotel    @relation(fields: [hotelId], references: [id])
+  id         String   @id @default(uuid())
+  title      String
+  body       String
+  type       String // created, updated, cancelled, completed
+  bookingId  String?
+  hotelId    String
+  booking    Booking? @relation(fields: [bookingId], references: [id])
+  hotel      Hotel    @relation(fields: [hotelId], references: [id])
   recipients User[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Hotel {
-  id          String    @id @default(uuid())
-  hotelName   String
-  description String
-  location    String    // Google Maps URL
-  address     String
-  totalRooms  Int
-  code        String    @unique
+  id            String @id @default(uuid())
+  hotelName     String
+  description   String
+  location      String // Google Maps URL
+  address       String
+  totalRooms    Int
+  code          String @unique
   contactNumber String
 
   // Hotel Rules
-  rules       HotelRules?
+  rules HotelRules?
 
   // Arrays
   amenities   String[]
   hotelImages String[]
 
   // Relations
-  owner       User[]     @relation("HotelOwner")
-  managers    User[]     @relation("HotelManager")
-  rooms       Room[]
-  bookings    Booking[]
-  notifications Notification[]
+  owner            User[]             @relation("HotelOwner")
+  managers         User[]             @relation("HotelManager")
+  rooms            Room[]
+  bookings         Booking[]
+  notifications    Notification[]
   bookingAnalytics BookingAnalytics[]
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 }
 
 model HotelRules {
-  id          String    @id @default(uuid())
-  hotel       Hotel     @relation(fields: [hotelId], references: [id])
-  hotelId     String    @unique
+  id      String @id @default(uuid())
+  hotel   Hotel  @relation(fields: [hotelId], references: [id])
+  hotelId String @unique
 
-  petsAllowed Boolean   @default(false)
-  maxPeopleInOneRoom Int
+  petsAllowed                 Boolean @default(false)
+  maxPeopleInOneRoom          Int
   extraMattressOnAvailability Boolean @default(false)
-  parking     Boolean   @default(false)
-  swimmingPool Boolean  @default(false)
-  swimmingPoolTimings String?
-  ownRestaurant Boolean @default(false)
-  checkInTime  Int
-  checkOutTime Int
-  guestInfoNeeded Boolean @default(false)
-  smokingAllowed Boolean @default(false)
-  alcoholAllowed Boolean @default(false)
-  eventsAllowed Boolean @default(false)
-  minimumAgeForCheckIn Int @default(18)
+  parking                     Boolean @default(false)
+  swimmingPool                Boolean @default(false)
+  swimmingPoolTimings         String?
+  ownRestaurant               Boolean @default(false)
+  checkInTime                 Int
+  checkOutTime                Int
+  guestInfoNeeded             Boolean @default(false)
+  smokingAllowed              Boolean @default(false)
+  alcoholAllowed              Boolean @default(false)
+  eventsAllowed               Boolean @default(false)
+  minimumAgeForCheckIn        Int     @default(18)
 }
 
 model Room {
-  id          String    @id @default(uuid())
-  hotel       Hotel     @relation(fields: [hotelId], references: [id])
-  roomNumber  String    @default("101")
-  hotelId     String
-  type        String
-  price       Float
+  id           String     @id @default(uuid())
+  hotel        Hotel      @relation(fields: [hotelId], references: [id])
+  roomNumber   String     @default("101")
+  hotelId      String
+  type         String
+  price        Float
   maxOccupancy Int
-  features    String[]
-  images      String[]
-  roomStatus  RoomStatus @default(AVAILABLE)
+  features     String[]
+  images       String[]
+  roomStatus   RoomStatus @default(AVAILABLE)
 
   // Relations
-  bookings    Booking[]
+  bookings Booking[]
 
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Booking {
-  id          String    @id @default(uuid())
-  hotel       Hotel     @relation(fields: [hotelId], references: [id])
-  hotelId     String
-  room        Room      @relation(fields: [roomId], references: [id])
-  roomId      String
-  customer    User      @relation(fields: [customerId], references: [id])
-  customerId  String
-  checkIn     DateTime
-  checkOut    DateTime
-  guests      Int
-  status      BookingStatus @default(PENDING)
-  
+  id         String        @id @default(uuid())
+  hotel      Hotel         @relation(fields: [hotelId], references: [id])
+  hotelId    String
+  room       Room          @relation(fields: [roomId], references: [id])
+  roomId     String
+  customer   User          @relation(fields: [customerId], references: [id])
+  customerId String
+  checkIn    DateTime
+  checkOut   DateTime
+  guests     Int
+  status     BookingStatus @default(PENDING)
+
   // Relations
-  payment     Payment?
+  payment       Payment?
   notifications Notification[]
 
-  bookingTime DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  bookingTime DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Payment {
-  id            String    @id @default(uuid())
-  booking       Booking   @relation(fields: [bookingId], references: [id])
-  bookingId     String    @unique
+  id            String        @id @default(uuid())
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  bookingId     String        @unique
   totalAmount   Float
   paidAmount    Float
   status        PaymentStatus @default(PENDING)
   transactionId String?
-  
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-} 
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
 
 model BookingAnalytics {
-  id             String   @id @default(uuid())
-  hotelId        String
-  date           DateTime
-  totalBookings  Int
-  canceledBookings Int
-  totalRevenue   Float
-  averageRevenue Float
-  occupancyRate  Float
-  createdAt      DateTime @default(now())
+  id                String   @id @default(uuid())
+  hotelId           String
+  hotel             Hotel    @relation(fields: [hotelId], references: [id])
+  date              DateTime
+  timeframe         String
+  totalBookings     Int
+  confirmedBookings Int
+  totalRevenue      Float
+  averageRevenue    Float
+  occupancyRate     Float
+  createdAt         DateTime @default(now())
 
-  hotel Hotel @relation(fields: [hotelId], references: [id])
-
-  @@unique([hotelId, date])
+  @@unique([hotelId, date, timeframe], name: "hotelId_date_timeframe")
 }

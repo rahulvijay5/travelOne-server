@@ -4,7 +4,7 @@ import { RedisUrl } from "@/config";
 import { createClient } from "redis";
 
 const redisClient = createClient({
-  url: RedisUrl, // e.g., redis://localhost:6379
+  url: RedisUrl,
 });
 
 redisClient.on("error", (err) => console.error("Redis Client Error", err));
@@ -25,7 +25,9 @@ export const cacheService = {
       value,
       "and expiration:",
       expirationInSeconds ? expirationInSeconds / 60 : "infinity",
-      "minutes"
+      "minutes",
+      "at",
+      new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
     );
     if (expirationInSeconds) {
       await redisClient.set(key, value, { EX: expirationInSeconds });

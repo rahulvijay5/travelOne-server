@@ -3,38 +3,38 @@
 import prisma from "../config/database";
 import { BookingAnalytics, BookingStatus } from "@prisma/client";
 import { cacheService } from "./cacheService";
+import { getDateRange } from "@/config/timeframe";
+import { Timeframe } from "@/types/index";
 
 export class AnalyticsService {
   /**
-   * Compute and store daily booking analytics for a specific hotel.
-   * This method can be scheduled to run daily.
+   * Compute and store booking analytics for a specific hotel and timeframe.
+   * @param hotelId - The ID of the hotel.
+   * @param timeframe - The selected timeframe.
    */
-  async computeDailyBookingAnalytics(
+  async computeBookingAnalytics(
     hotelId: string,
-    date: Date
+    timeframe: Timeframe
   ): Promise<void> {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(endOfDay.getDate() + 1);
+    const { startDate, endDate } = getDateRange(timeframe);
 
     const totalBookings = await prisma.booking.count({
       where: {
         hotelId,
         bookingTime: {
-          gte: startOfDay,
-          lt: endOfDay,
+          gte: startDate,
+          lt: endDate,
         },
       },
     });
 
-    const canceledBookings = await prisma.booking.count({
+    const confirmedBookings = await prisma.booking.count({
       where: {
         hotelId,
-        status: BookingStatus.CANCELLED,
+        status: BookingStatus.CONFIRMED,
         bookingTime: {
-          gte: startOfDay,
-          lt: endOfDay,
+          gte: startDate,
+          lt: endDate,
         },
       },
     });
@@ -43,8 +43,8 @@ export class AnalyticsService {
       where: {
         hotelId,
         bookingTime: {
-          gte: startOfDay,
-          lt: endOfDay,
+          gte: startDate,
+          lt: endDate,
         },
       },
       include: {
@@ -58,35 +58,36 @@ export class AnalyticsService {
 
     const averageRevenue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
 
-    // Assuming total rooms are available in the Hotel model
     const hotel = await prisma.hotel.findUnique({
       where: { id: hotelId },
-      include: { rooms: true },
+      include: { _count: { select: { rooms: true } } },
     });
 
-    const totalRooms = hotel?.totalRooms || 0;
+    const totalRooms = hotel?._count.rooms || 0;
     const occupancyRate =
-      totalRooms > 0 ? (totalBookings / totalRooms) * 100 : 0;
+      totalRooms > 0 ? (confirmedBookings / totalRooms) * 100 : 0;
 
     await prisma.bookingAnalytics.upsert({
       where: {
-        hotelId_date: {
+        hotelId_date_timeframe: {
           hotelId,
-          date: startOfDay,
+          date: startDate,
+          timeframe,
         },
       },
       update: {
         totalBookings,
-        canceledBookings,
+        confirmedBookings,
         totalRevenue,
         averageRevenue,
         occupancyRate,
       },
       create: {
         hotelId,
-        date: startOfDay,
+        date: startDate,
+        timeframe,
         totalBookings,
-        canceledBookings,
+        confirmedBookings,
         totalRevenue,
         averageRevenue,
         occupancyRate,
@@ -95,66 +96,77 @@ export class AnalyticsService {
   }
 
   /**
-   * Retrieve booking analytics for a specific hotel within a date range.
+   * Retrieve booking analytics for a specific hotel and timeframe, utilizing caching.
+   * @param hotelId - The ID of the hotel.
+   * @param timeframe - The selected timeframe.
+   * @returns An object containing the analytics data and calculation time.
    */
-  async getBookingAnalytics(
+  async getBookingAnalyticsWithCaching(
     hotelId: string,
-    startDate: Date,
-    endDate: Date
-  ): Promise<BookingAnalytics[]> {
-    return prisma.bookingAnalytics.findMany({
-      where: {
-        hotelId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: {
-        date: "asc",
-      },
-    });
+    timeframe: Timeframe
+  ): Promise<{
+    revenue: number;
+    totalBookings: number;
+    pendingBookings: number;
+    occupancyRate: number;
+    confirmedBookings: number;
+    completedBookings: number;
+    cancelledBookings: number;
+    availableRooms: number;
+    calculatedAt: string;
+  }> {
+    const cacheKey = `analytics_${hotelId}_${timeframe}`;
+    const cached = await cacheService.get(cacheKey);
+    if (cached) {
+      console.log("Returning cached analytics data");
+      return JSON.parse(cached);
+    }
+
+    const { startDate, endDate } = getDateRange(timeframe);
+
+    // Compute analytics data
+    const data = await this.calculateAnalyticsData(hotelId, startDate, endDate);
+
+    console.log("data", data);
+
+    const result = {
+      ...data,
+      calculatedAt: new Date().toISOString(),
+    };
+
+    // Cache the result for 5 minutes (300 seconds)
+    await cacheService.set(cacheKey, JSON.stringify(result), 300);
+
+    return result;
   }
 
-  private async calculateRealTimeBookingAnalytics(
+  /**
+   * Calculate analytics data without caching.
+   * @param hotelId - The ID of the hotel.
+   * @param startDate - Start date of the timeframe.
+   * @param endDate - End date of the timeframe.
+   * @returns An object containing the analytics data.
+   */
+  private async calculateAnalyticsData(
     hotelId: string,
     startDate: Date,
     endDate: Date
   ): Promise<{
-    precomputedData: BookingAnalytics[];
-    realTimeData: {
-      totalBookings: number;
-      canceledBookings: number;
-      totalRevenue: number;
-      averageRevenue: number;
-      occupancyRate: number;
-    };
+    revenue: number;
+    totalBookings: number;
+    pendingBookings: number;
+    occupancyRate: number;
+    confirmedBookings: number;
+    completedBookings: number;
+    cancelledBookings: number;
+    availableRooms: number;
   }> {
-    const precomputedData = await this.getBookingAnalytics(
-      hotelId,
-      startDate,
-      endDate
-    );
-
-    // Example: Calculate bookings in the last hour
-    const realTimeStart = new Date();
-    realTimeStart.setHours(realTimeStart.getHours() - 1);
-
     const totalBookings = await prisma.booking.count({
       where: {
         hotelId,
         bookingTime: {
-          gte: realTimeStart,
-        },
-      },
-    });
-
-    const canceledBookings = await prisma.booking.count({
-      where: {
-        hotelId,
-        status: BookingStatus.CANCELLED,
-        bookingTime: {
-          gte: realTimeStart,
+          gte: startDate,
+          lt: endDate,
         },
       },
     });
@@ -163,7 +175,8 @@ export class AnalyticsService {
       where: {
         hotelId,
         bookingTime: {
-          gte: realTimeStart,
+          gte: startDate,
+          lt: endDate,
         },
       },
       include: {
@@ -171,106 +184,197 @@ export class AnalyticsService {
       },
     });
 
-    const totalRevenue = bookings.reduce((sum, booking) => {
+    const revenue = bookings.reduce((sum, booking) => {
       return sum + (booking.payment?.paidAmount || 0);
     }, 0);
 
-    const averageRevenue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
-
     const hotel = await prisma.hotel.findUnique({
       where: { id: hotelId },
-      include: { rooms: true },
+      include: { _count: { select: { rooms: true } } },
     });
 
-    const totalRooms = hotel?.totalRooms || 0;
+    const totalRooms = hotel?._count.rooms || 0;
+    
+    const bookingStats = await prisma.booking.groupBy({
+      by: ["status"],
+      where: {
+        hotelId,
+        checkIn: {
+          lte: endDate,
+        },
+        checkOut: {
+          gte: startDate,
+        },
+      },
+      _count: {
+        _all: true,
+      },
+    });
+
+    console.log("bookingStats", bookingStats);
+
+    const bookingCounts = bookingStats.reduce((acc, curr) => {
+      acc[curr.status] = curr._count._all;
+      return acc;
+    }, {} as Record<BookingStatus, number>);
+
+    console.log("bookingCounts", bookingCounts);
+
     const occupancyRate =
-      totalRooms > 0 ? (totalBookings / totalRooms) * 100 : 0;
+      totalRooms > 0
+        ? (bookingCounts[BookingStatus.CONFIRMED] / totalRooms) * 100
+        : 0;
+
+    // Calculate available rooms
+    const availableRooms =
+      totalRooms -
+      (await this.getBookedRoomsCount(hotelId, startDate, endDate));
 
     return {
-      precomputedData,
-      realTimeData: {
-        totalBookings,
-        canceledBookings,
-        totalRevenue,
-        averageRevenue,
-        occupancyRate,
-      },
+      revenue,
+      totalBookings,
+      pendingBookings: bookingCounts[BookingStatus.PENDING] || 0,
+      occupancyRate,
+      confirmedBookings: bookingCounts[BookingStatus.CONFIRMED] || 0,
+      completedBookings: bookingCounts[BookingStatus.COMPLETED] || 0,
+      cancelledBookings: bookingCounts[BookingStatus.CANCELLED] || 0,
+      availableRooms,
     };
   }
 
-  async getRealTimeBookingAnalytics(
+  /**
+   * Get the count of booked rooms within a date range.
+   * @param hotelId - The ID of the hotel.
+   * @param startDate - Start date of the range.
+   * @param endDate - End date of the range.
+   * @returns The number of booked rooms.
+   */
+  private async getBookedRoomsCount(
     hotelId: string,
     startDate: Date,
     endDate: Date
-  ): Promise<{
-    precomputedData: BookingAnalytics[];
-    realTimeData: {
-      totalBookings: number;
-      canceledBookings: number;
-      totalRevenue: number;
-      averageRevenue: number;
-      occupancyRate: number;
-    };
-  }> {
-    const cacheKey = `analytics_${hotelId}_${startDate.toISOString()}_${endDate.toISOString()}`;
-    const cached = await cacheService.get(cacheKey);
-    if (cached) {
-      console.log("Presenting cached analytics data");
-      return JSON.parse(cached);
-    }
+  ): Promise<number> {
+    const bookings = await prisma.booking.findMany({
+      where: {
+        hotelId,
+        status: BookingStatus.CONFIRMED,
+        OR: [
+          {
+            checkIn: {
+              lte: endDate,
+            },
+            checkOut: {
+              gte: startDate,
+            },
+          },
+        ],
+      },
+      select: {
+        roomId: true,
+      },
+    });
 
-    const data = await this.calculateRealTimeBookingAnalytics(
-      hotelId,
-      startDate,
-      endDate
-    );
-    // Cache the result for 10 minutes
-    await cacheService.set(cacheKey, JSON.stringify(data), 600);
-    return data;
+    const uniqueRoomIds = new Set(bookings.map((booking) => booking.roomId));
+    return uniqueRoomIds.size;
   }
 
+  /**
+   * Retrieve occupancy data for a specific hotel and timeframe.
+   * @param hotelId - The ID of the hotel.
+   * @param startDate - Start date of the timeframe.
+   * @param endDate - End date of the timeframe.
+   * @returns An object containing occupancy data.
+   */
   async calculateOccupancyData(
     hotelId: string,
     startDate: Date,
     endDate: Date
   ): Promise<{
-    totalBookedRooms: number;
     totalRooms: number;
     totalAvailableRooms: number;
+    totalBookedRooms: number;
+    pendingBookings: number;
+    confirmedBookings: number;
+    cancelledBookings: number;
+    completedBookings: number;
     occupancyRate: number;
   }> {
-    const totalRooms = (await prisma.hotel.findUnique({
+    const hotel = await prisma.hotel.findUnique({
       where: { id: hotelId },
-      select: { rooms:true },
-    }))?.rooms.length || 0;
-
-    if (totalRooms === 0)
-      return {
-        totalBookedRooms: 0,
-        totalRooms,
-        totalAvailableRooms: 0,
-        occupancyRate: 0,
-      };
-    const totalBookedRooms = await prisma.booking.count({
-      where: {
-        hotelId,
-        status: BookingStatus.CONFIRMED,
-        AND: [
-          {
-            checkIn: { gte: startDate },
+      include: {
+        rooms: {
+          include: {
+            bookings: {
+              where: {
+                AND: [
+                  { checkIn: { lte: endDate } },
+                  { checkOut: { gte: startDate } },
+                  { status: BookingStatus.CONFIRMED },
+                ],
+              },
+            },
           },
-          {
-            checkOut: { lte: endDate },
-          },
-        ],
+        },
       },
     });
 
+    if (!hotel || !hotel.rooms.length) {
+      return {
+        totalRooms: 0,
+        totalAvailableRooms: 0,
+        totalBookedRooms: 0,
+        pendingBookings: 0,
+        confirmedBookings: 0,
+        cancelledBookings: 0,
+        completedBookings: 0,
+        occupancyRate: 0,
+      };
+    }
+
+    const bookedRooms = hotel.rooms.filter(
+      (room) => room.bookings.length > 0
+    ).length;
+
+    const totalRooms = hotel.rooms.length;
+    const totalBookedRooms = bookedRooms;
+    const totalAvailableRooms = totalRooms - totalBookedRooms;
+    const occupancyRate =
+      totalRooms > 0 ? (totalBookedRooms / totalRooms) * 100 : 0;
+
+    const bookingStats = await prisma.booking.groupBy({
+      by: ["status"],
+      where: {
+        hotelId,
+        OR: [
+          {
+            checkIn: {
+              lte: endDate,
+            },
+            checkOut: {
+              gte: startDate,
+            },
+          },
+        ],
+      },
+      _count: {
+        _all: true,
+      },
+    });
+
+    const bookingCounts = bookingStats.reduce((acc, curr) => {
+      acc[curr.status] = curr._count._all;
+      return acc;
+    }, {} as Record<BookingStatus, number>);
+
     return {
-      totalBookedRooms,
-      totalAvailableRooms: totalRooms - totalBookedRooms,
       totalRooms,
-      occupancyRate: (totalBookedRooms / totalRooms) * 100,
+      totalAvailableRooms,
+      totalBookedRooms,
+      pendingBookings: bookingCounts[BookingStatus.PENDING] || 0,
+      confirmedBookings: bookingCounts[BookingStatus.CONFIRMED] || 0,
+      cancelledBookings: bookingCounts[BookingStatus.CANCELLED] || 0,
+      completedBookings: bookingCounts[BookingStatus.COMPLETED] || 0,
+      occupancyRate,
     };
   }
 }

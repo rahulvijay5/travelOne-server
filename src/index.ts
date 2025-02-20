@@ -5,7 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import { clerkMiddleware } from "@clerk/express";
 
 import { specs } from './config/swagger';
-import { initializeScheduler } from './config/scheduler';
+// import { initializeScheduler } from './config/scheduler';
 
 // Import routes
 import userRoutes from './routes/userRoutes';
@@ -44,7 +44,7 @@ app.get("/status",(req,res)=>{
   res.json({message:"Server is working completely fine. GO ahead!"})
 })
 
-initializeScheduler();
+// initializeScheduler();
 
 const shutdown = async () => {
   console.log("Shutting down gracefully...");

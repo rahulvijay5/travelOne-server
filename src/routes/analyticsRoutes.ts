@@ -1,15 +1,29 @@
 // src/routes/analyticsRoutes.ts
 
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { getBookingAnalytics, getOccupancyData } from "@/controllers/analyticsContoller";
+import { requireAuth } from "@clerk/express";
 
 const router = express.Router();
+
+// Create a rate limiter for analytics endpoints
+const analyticsLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP, please try again after 15 minutes",
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Apply rate limiting to all analytics routes
+router.use(analyticsLimiter);
 
 /**
  * @swagger
  * /api/analytics/{hotelId}:
  *   get:
- *     summary: Get booking analytics for a hotel within a date range
+ *     summary: Get booking analytics for a hotel within a specified timeframe
  *     tags: [Analytics]
  *     security:
  *       - BearerAuth: []
@@ -21,57 +35,29 @@ const router = express.Router();
  *         required: true
  *         description: ID of the hotel
  *       - in: query
- *         name: startDate
+ *         name: timeframe
  *         schema:
  *           type: string
- *           format: date
- *         required: true
- *         description: Start date for analytics (YYYY-MM-DD)
- *       - in: query
- *         name: endDate
- *         schema:
- *           type: string
- *           format: date
- *         required: true
- *         description: End date for analytics (YYYY-MM-DD)
+ *           enum: [today, tomorrow, thisWeek, currentMonth]
+ *         required: false
+ *         description: Timeframe for analytics data
  *     responses:
  *       200:
  *         description: Booking analytics data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 precomputedData:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/BookingAnalytics'
- *                 realTimeData:
- *                   type: object
- *                   properties:
- *                     totalBookings:
- *                       type: integer
- *                     canceledBookings:
- *                       type: integer
- *                     totalRevenue:
- *                       type: number
- *                     averageRevenue:
- *                       type: number
- *                     occupancyRate:
- *                       type: number
  *       400:
  *         description: Invalid parameters
+ *       429:
+ *         description: Too many requests from this IP
  *       500:
  *         description: Server error
  */
-router.get('/:hotelId', getBookingAnalytics);
-
+router.get('/:hotelId', requireAuth(), getBookingAnalytics);
 
 /**
  * @swagger
  * /api/analytics/{hotelId}/occupancy:
  *   get:
- *     summary: Get occupancy data for a hotel within a date range
+ *     summary: Get occupancy data for a hotel within a specified timeframe
  *     tags: [Analytics]
  *     security:
  *       - BearerAuth: []
@@ -83,49 +69,24 @@ router.get('/:hotelId', getBookingAnalytics);
  *         required: true
  *         description: ID of the hotel
  *       - in: query
- *         name: startDate
+ *         name: timeframe
  *         schema:
  *           type: string
- *           format: date
- *         required: true
- *         description: Start date for analytics (YYYY-MM-DD)
- *       - in: query
- *         name: endDate
- *         schema:
- *           type: string
- *           format: date
- *         required: true
- *         description: End date for analytics (YYYY-MM-DD)
+ *           enum: [today, tomorrow, thisWeek, currentMonth]
+ *         required: false
+ *         description: Timeframe for occupancy data
  *     responses:
  *       200:
- *         description: Booking analytics data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 precomputedData:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/BookingAnalytics'
- *                 realTimeData:
- *                   type: object
- *                   properties:
- *                     totalBookings:
- *                       type: integer
- *                     canceledBookings:
- *                       type: integer
- *                     totalRevenue:
- *                       type: number
- *                     averageRevenue:
- *                       type: number
- *                     occupancyRate:
- *                       type: number
+ *         description: Occupancy data
  *       400:
  *         description: Invalid parameters
+ *       404:
+ *         description: Hotel not found
+ *       429:
+ *         description: Too many requests from this IP
  *       500:
  *         description: Server error
  */
-router.get('/:hotelId/occupancy', getOccupancyData);
+router.get('/:hotelId/occupancy', requireAuth(), getOccupancyData);
 
 export default router;

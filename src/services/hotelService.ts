@@ -71,11 +71,10 @@ export class HotelService {
         ownedHotels: true,
       },
     });
-    console.log("Hotels: ", hotels);
     if (!hotels) {
       return null;
     }
-    console.log("Hotels: ", hotels.ownedHotels);
+    console.log("Hotels fetched with ownedHotels ");
     return hotels.ownedHotels;
   }
 
