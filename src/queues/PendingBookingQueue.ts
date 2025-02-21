@@ -101,10 +101,10 @@ const getDynamicDelay = (): number => {
   const currentHour = new Date().getHours();
   // Night time (10 PM - 9 AM): Check every hour
   if (currentHour >= 22 || currentHour < 9) {
-    return 3600000; // 1 hour
+    return Math.min(3600000, 2147483647); // 1 hour
   }
   // Day time: Check every 12 minutes
-  return 720000; // 12 minutes
+  return Math.min(720000, 2147483647); // 12 minutes
 };
 
 // Initialize the queue system

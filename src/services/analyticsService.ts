@@ -52,9 +52,15 @@ export class AnalyticsService {
       },
     });
 
-    const totalRevenue = bookings.reduce((sum, booking) => {
-      return sum + (booking.payment?.paidAmount || 0);
-    }, 0);
+    const totalRevenue = bookings
+      .filter(
+        (booking) =>
+          booking.status === BookingStatus.COMPLETED ||
+          booking.status === BookingStatus.CONFIRMED
+      )
+      .reduce((sum, booking) => {
+        return sum + (booking.payment?.paidAmount || 0);
+      }, 0);
 
     const averageRevenue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
 
@@ -127,8 +133,6 @@ export class AnalyticsService {
     // Compute analytics data
     const data = await this.calculateAnalyticsData(hotelId, startDate, endDate);
 
-    console.log("data", data);
-
     const result = {
       ...data,
       calculatedAt: new Date().toISOString(),
@@ -161,40 +165,7 @@ export class AnalyticsService {
     cancelledBookings: number;
     availableRooms: number;
   }> {
-    const totalBookings = await prisma.booking.count({
-      where: {
-        hotelId,
-        bookingTime: {
-          gte: startDate,
-          lt: endDate,
-        },
-      },
-    });
-
-    const bookings = await prisma.booking.findMany({
-      where: {
-        hotelId,
-        bookingTime: {
-          gte: startDate,
-          lt: endDate,
-        },
-      },
-      include: {
-        payment: true,
-      },
-    });
-
-    const revenue = bookings.reduce((sum, booking) => {
-      return sum + (booking.payment?.paidAmount || 0);
-    }, 0);
-
-    const hotel = await prisma.hotel.findUnique({
-      where: { id: hotelId },
-      include: { _count: { select: { rooms: true } } },
-    });
-
-    const totalRooms = hotel?._count.rooms || 0;
-    
+    // Get bookings stats first
     const bookingStats = await prisma.booking.groupBy({
       by: ["status"],
       where: {
@@ -211,24 +182,57 @@ export class AnalyticsService {
       },
     });
 
-    console.log("bookingStats", bookingStats);
-
     const bookingCounts = bookingStats.reduce((acc, curr) => {
       acc[curr.status] = curr._count._all;
       return acc;
     }, {} as Record<BookingStatus, number>);
 
-    console.log("bookingCounts", bookingCounts);
+    // Get revenue using the same date range as booking stats
+    const bookings = await prisma.booking.findMany({
+      where: {
+        hotelId,
+        checkIn: {
+          lte: endDate,
+        },
+        checkOut: {
+          gte: startDate,
+        },
+        status: {
+          in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED]
+        }
+      },
+      include: {
+        payment: true,
+        room: true
+      },
+    });
 
-    const occupancyRate =
-      totalRooms > 0
-        ? (bookingCounts[BookingStatus.CONFIRMED] / totalRooms) * 100
-        : 0;
+    // Calculate revenue only from confirmed and completed bookings with valid payments
+    const revenue = bookings.reduce((sum, booking) => {
+      // Only include if payment exists and is greater than 0
+      const paymentAmount = booking.payment?.paidAmount || 0;
+      if (paymentAmount > 0) {
+        return sum + paymentAmount;
+      }
+      return sum;
+    }, 0);
+
+    console.log("Final calculated revenue:", revenue);
+
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: hotelId },
+      include: { _count: { select: { rooms: true } } },
+    });
+
+    const totalRooms = hotel?._count.rooms || 0;
+    const totalBookings = Object.values(bookingCounts).reduce((sum, count) => sum + count, 0);
+    
+    const occupancyRate = totalRooms > 0
+      ? ((bookingCounts[BookingStatus.CONFIRMED] || 0) / totalRooms) * 100
+      : 0;
 
     // Calculate available rooms
-    const availableRooms =
-      totalRooms -
-      (await this.getBookedRoomsCount(hotelId, startDate, endDate));
+    const availableRooms = totalRooms - (await this.getBookedRoomsCount(hotelId, startDate, endDate));
 
     return {
       revenue,

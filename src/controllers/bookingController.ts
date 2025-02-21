@@ -15,13 +15,17 @@ export const createBooking = async (
     const booking = await bookingService.createBooking(bookingData);
     res.status(201).json(booking);
   } catch (error) {
-    if (error instanceof Error && error.message === 'Room is not available for the selected dates or it is already booked.') {
+    if (
+      error instanceof Error &&
+      error.message ===
+        "Room is not available for the selected dates or it is already booked."
+    ) {
       res.status(400).json({ error: error.message });
     } else {
       console.error("Error creating booking:", error);
-      res.status(500).json({ error: "Error creating booking" });
-      }
-      }
+      res.status(500).json({ error });
+    }
+  }
 };
 
 export const getBookingById = async (
@@ -31,7 +35,7 @@ export const getBookingById = async (
   try {
     const { bookingId } = req.params;
     const booking = await bookingService.getBookingById(bookingId);
-    
+
     if (!booking) {
       res.status(404).json({ error: "Booking not found" });
       return;
@@ -70,7 +74,7 @@ export const updateBooking = async (
     const { bookingId } = req.params;
     const updateData = req.body;
     const booking = await bookingService.updateBooking(bookingId, updateData);
-    
+
     if (!booking) {
       res.status(404).json({ error: "Booking not found" });
       return;
@@ -90,7 +94,7 @@ export const cancelBooking = async (
   try {
     const { bookingId } = req.params;
     const booking = await bookingService.cancelBooking(bookingId);
-    
+
     if (!booking) {
       res.status(404).json({ error: "Booking not found" });
       return;
@@ -126,9 +130,9 @@ export const getCurrentBooking = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  try { 
-    const { userId } = req.params;
-    const booking = await bookingService.getCurrentBooking(userId);
+  try {
+    const { clerkId } = req.params;
+    const booking = await bookingService.getCurrentBooking(clerkId);
     if (!booking) {
       res.status(404).json({ message: "No current booking found" });
       return;
@@ -164,10 +168,14 @@ export const getHotelBookingsByStatus = async (
 ): Promise<void> => {
   try {
     const { hotelId, status } = req.params;
-    const bookings = await bookingService.getHotelBookingsByStatus(hotelId, status as BookingStatus);
-    console.log(bookings)
+    const bookings = await bookingService.getHotelBookingsByStatus(
+      hotelId,
+      status as BookingStatus
+    );
     if (!bookings) {
-      res.status(404).json({ error: `Bookings with ${status} status not found` });
+      res
+        .status(404)
+        .json({ error: `Bookings with ${status} status not found` });
       return;
     }
     res.status(200).json(bookings);
@@ -192,35 +200,49 @@ export const getFilteredHotelBookings = async (
       sortBy,
       sortOrder,
       page,
-      limit
+      limit,
     } = req.query;
 
     // Validate and parse query parameters
     const filters = {
       status: status as BookingStatus,
-      timeRange: timeRange as 'today' | 'yesterday' | 'thisWeek' | 'thisMonth' | 'custom',
+      timeRange: timeRange as
+        | "today"
+        | "yesterday"
+        | "thisWeek"
+        | "thisMonth"
+        | "custom",
       startDate: startDate ? new Date(startDate as string) : undefined,
       endDate: endDate ? new Date(endDate as string) : undefined,
       roomStatus: roomStatus as RoomStatus,
-      sortBy: sortBy as 'checkIn' | 'checkOut' | 'bookingTime',
-      sortOrder: sortOrder as 'asc' | 'desc',
+      sortBy: sortBy as "checkIn" | "checkOut" | "bookingTime",
+      sortOrder: sortOrder as "asc" | "desc",
       page: page ? parseInt(page as string) : undefined,
-      limit: limit ? parseInt(limit as string) : undefined
+      limit: limit ? parseInt(limit as string) : undefined,
     };
 
     // Validate date range if custom timeRange
-    if (filters.timeRange === 'custom') {
+    if (filters.timeRange === "custom") {
       if (!filters.startDate || !filters.endDate) {
-        res.status(400).json({ error: "startDate and endDate are required for custom timeRange" });
+        res
+          .status(400)
+          .json({
+            error: "startDate and endDate are required for custom timeRange",
+          });
         return;
       }
       if (filters.startDate > filters.endDate) {
-        res.status(400).json({ error: "startDate must be before or equal to endDate" });
+        res
+          .status(400)
+          .json({ error: "startDate must be before or equal to endDate" });
         return;
       }
     }
 
-    const result = await bookingService.getFilteredHotelBookings(hotelId, filters);
+    const result = await bookingService.getFilteredHotelBookings(
+      hotelId,
+      filters
+    );
     res.status(200).json(result);
   } catch (error) {
     console.error("Error fetching filtered hotel bookings:", error);
@@ -258,13 +280,13 @@ export const updatePaymentStatus = async (
 
     if (payment.status === PaymentStatus.PAID) {
       const booking = await bookingService.updateBooking(bookingId, {
-        status: BookingStatus.CONFIRMED
+        status: BookingStatus.CONFIRMED,
       });
       responseMessage = "Payment Done, booking status updated";
       responseData.booking = booking;
     } else if (payment.status === PaymentStatus.FAILED) {
       const booking = await bookingService.updateBooking(bookingId, {
-        status: BookingStatus.CANCELLED
+        status: BookingStatus.CANCELLED,
       });
       await roomService.updateRoomStatus(booking.roomId, RoomStatus.AVAILABLE);
       responseMessage = "Payment Failed, booking status updated";
@@ -273,13 +295,13 @@ export const updatePaymentStatus = async (
 
     res.status(200).json({
       message: responseMessage,
-      ...responseData
+      ...responseData,
     });
   } catch (error) {
     console.error("Error updating payment status:", error);
     res.status(500).json({ error: "Error updating payment status" });
   }
-}; 
+};
 
 export const makeBookingCheckout = async (
   req: Request,
@@ -291,23 +313,25 @@ export const makeBookingCheckout = async (
     console.log("Checked out booking: ", booking);
     res.status(200).json({
       message: "Booking checked out successfully",
-      booking
+      booking,
     });
   } catch (error) {
     console.error("Error checking out booking:", error);
     if (error instanceof Error) {
-      if (error.message === 'Booking not found') {
+      if (error.message === "Booking not found") {
         res.status(404).json({ error: error.message });
-      } else if (error.message === 'Only confirmed bookings can be checked out') {
+      } else if (
+        error.message === "Only confirmed bookings can be checked out"
+      ) {
         res.status(400).json({ error: error.message });
       } else {
-        res.status(500).json({ 
+        res.status(500).json({
           error: "Error checking out booking",
-          details: error.message
+          details: error.message,
         });
       }
     } else {
       res.status(500).json({ error: "Error checking out booking" });
     }
   }
-}; 
+};

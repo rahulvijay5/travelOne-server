@@ -22,7 +22,7 @@ import { getCancellationQueue } from "@/queues/PendingBookingQueue";
 const notificationService = new NotificationService();
 
 export class BookingService {
-  async createBooking(data: CreateBookingData): Promise<Booking> {
+  async createBooking(data: CreateBookingData): Promise<Booking | { error: string }> {
     console.log('🏁 Starting booking creation process...');
     
     // Check if room is available for the given dates
@@ -54,7 +54,9 @@ export class BookingService {
 
     if (existingBooking) {
       console.log('❌ Room is already booked for the selected dates');
-      throw new Error("Room is not available for the selected dates");
+      return {
+        error: "Room is not available for the selected dates",
+      };
     }
 
     console.log('✅ Room is available for the selected dates');
@@ -307,10 +309,10 @@ export class BookingService {
     });
   }
 
-  async getCurrentBooking(userId: string) {
+  async getCurrentBooking(clerkId: string) {
     const booking = await prisma.user.findFirst({
       where: {
-        id: userId,
+        clerkId: clerkId,
       },
       include: {
         bookings: {
@@ -326,6 +328,20 @@ export class BookingService {
                 status: BookingStatus.CONFIRMED,
               },
             ],
+          },
+          include: {
+            payment: {
+              select: {
+                status: true,
+                totalAmount: true,
+                paidAmount: true,
+              },
+            },
+            hotel: {
+              select: {
+                code: true,
+              },
+            },
           },
         },
       },

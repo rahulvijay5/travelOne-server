@@ -207,7 +207,7 @@ export class RoomService {
                         // 3. Booking is cancelled
                         {
                           status: BookingStatus.CANCELLED
-                        }
+                        },
                       ]
                     }
                   }
