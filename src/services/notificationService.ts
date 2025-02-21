@@ -95,7 +95,6 @@ class NotificationService {
           }
         }
       });
-      console.log("found this booking", booking);
       if (!booking) {
         throw new Error("Booking not found");
       }
@@ -105,7 +104,7 @@ class NotificationService {
         // ...booking.hotel.owner.map(owner => owner.id),
         ...booking.hotel.managers.map(manager => manager.id)
       ];
-      console.log("recipientIds", recipientIds);
+
       // Get push tokens for all recipients
       const pushTokens = await prisma.pushToken.findMany({
         where: {
@@ -114,7 +113,6 @@ class NotificationService {
           }
         }
       });
-      console.log("pushTokens", pushTokens);
       const tokens = pushTokens.map(token => token.token);
 
       if (tokens.length === 0) {

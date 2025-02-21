@@ -155,3 +155,20 @@ export interface BookingNotificationData {
   bookingId: string;
   type: BookingNotificationType;
 }
+
+export interface CheckBookingStatusResponse {
+  id: string;
+  status: BookingStatus;
+  checkIn: Date;
+  checkOut: Date;
+  guests: number;
+  payment:{
+    paidAmount: number;
+    totalAmount: number;
+    status: PaymentStatus;
+  } | null;
+  room: {
+    roomNumber: string;
+    type: string;
+  } | null;
+}

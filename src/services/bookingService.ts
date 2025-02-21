@@ -14,6 +14,7 @@ import {
   FilteredBookingResponse,
   UpdateBookingData,
   UpdatePaymentData,
+  CheckBookingStatusResponse,
 } from "@/types";
 import NotificationService from "./notificationService";
 import { getCancellationQueue } from "@/queues/PendingBookingQueue";
@@ -107,7 +108,7 @@ export class BookingService {
       console.log('👤 Booking created by customer, sending notifications and scheduling auto-cancellation');
       
       console.log('📤 Sending booking notification to managers');
-      await notificationService.sendBookingNotification(
+      notificationService.sendBookingNotification(
         booking.id,
         booking.hotelId,
         BookingNotificationType.CREATED
@@ -145,6 +146,38 @@ export class BookingService {
         payment: true,
       },
     });
+  }
+
+  async checkStatusOfBooking(bookingId: string): Promise<CheckBookingStatusResponse | null> {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      select: {
+        id: true,
+        status: true,
+        checkIn: true,
+        checkOut: true,
+        guests: true,
+        payment: {
+          select: {
+            paidAmount: true,
+            totalAmount: true,
+            status: true,
+          },
+        },
+        room: {
+          select: {
+            roomNumber: true,
+            type: true,
+          },
+        },
+      },
+    });
+
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    return booking
   }
 
   async updateBooking(
@@ -252,7 +285,7 @@ export class BookingService {
         // }
 
       // Send cancellation notification
-      await notificationService.sendBookingCancelNotification(bookingId);
+      notificationService.sendBookingCancelNotification(bookingId);
     }
 
     return booking;
@@ -272,6 +305,36 @@ export class BookingService {
         checkIn: "desc",
       },
     });
+  }
+
+  async getCurrentBooking(userId: string) {
+    const booking = await prisma.user.findFirst({
+      where: {
+        id: userId,
+      },
+      include: {
+        bookings: {
+          where: {
+            AND: [
+              {
+                checkOut: {
+                  gte: new Date(),
+                },
+                checkIn: {
+                  lte: new Date(),
+                },
+                status: BookingStatus.CONFIRMED,
+              },
+            ],
+          },
+        },
+      },
+    });
+    console.log("booking", booking);
+    if (!booking?.bookings[0]) {
+      return null;
+    }
+    return booking?.bookings[0];
   }
 
   async getHotelBookings(hotelId: string): Promise<Booking[]> {

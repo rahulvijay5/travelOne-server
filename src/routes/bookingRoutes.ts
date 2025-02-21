@@ -10,7 +10,9 @@ import {
   updatePaymentStatus,
   getHotelBookingsByStatus,
   getFilteredHotelBookings,
-  makeBookingCheckout
+  makeBookingCheckout,
+  getCurrentBooking,
+  checkBookingStatus
 } from '../controllers/bookingController';
 
 const router = express.Router();
@@ -100,6 +102,8 @@ router.post('/', createBooking);
  *                 $ref: '#/components/schemas/Booking'
  */
 router.get('/user', getUserBookings);
+
+router.get('/current-booking/:userId', getCurrentBooking);
 
 /**
  * @swagger
@@ -223,6 +227,7 @@ router.get('/hotel/:hotelId', getHotelBookings);
  */
 router.get('/hotel/:hotelId/filter', getFilteredHotelBookings);
 
+router.get('/check-booking-status/:bookingId', checkBookingStatus);
 /**
  * @swagger
  * /api/bookings/{hotelId}/{status}:
@@ -282,6 +287,7 @@ router.get('/:hotelId/:status', getHotelBookingsByStatus);
  *         description: Booking not found
  */
 router.get('/:bookingId', getBookingById);
+
 
 /**
  * @swagger
