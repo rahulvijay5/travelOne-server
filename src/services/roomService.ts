@@ -182,7 +182,21 @@ export class RoomService {
               OR: [
                 {
                   bookings: {
-                    none: {}
+                    none: {
+                      AND: [
+                        // Check if there are any bookings that overlap with requested dates
+                        {
+                          checkIn: { lt: checkOut },
+                          checkOut: { gt: checkIn }
+                        },
+                        // And are in a blocking status (CONFIRMED or PENDING)
+                        {
+                          status: {
+                            in: [BookingStatus.CONFIRMED, BookingStatus.PENDING]
+                          }
+                        }
+                      ]
+                    }
                   }
                 },
                 {
@@ -194,20 +208,28 @@ export class RoomService {
                         {
                           AND: [
                             { checkOut: { lte: checkIn } },
-                            { status: { not: BookingStatus.CANCELLED } }
+                            { 
+                              status: { 
+                                in: [BookingStatus.COMPLETED, BookingStatus.CONFIRMED] 
+                              } 
+                            }
                           ]
                         },
                         // 2. Existing booking's check-in is after or equal to new check-out
                         {
                           AND: [
                             { checkIn: { gte: checkOut } },
-                            { status: { not: BookingStatus.CANCELLED } }
+                            { 
+                              status: { 
+                                in: [BookingStatus.COMPLETED, BookingStatus.CONFIRMED] 
+                              } 
+                            }
                           ]
                         },
                         // 3. Booking is cancelled
                         {
                           status: BookingStatus.CANCELLED
-                        },
+                        }
                       ]
                     }
                   }

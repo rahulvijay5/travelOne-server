@@ -216,9 +216,6 @@ export const getAvailableRooms = async (
     const lastDay = new Date();
     lastDay.setDate(lastDay.getDate() - 1);
 
-    console.log("Check-in date: ", checkInDate);
-    console.log("Check-out date: ", checkOutDate);
-
     if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
       res.status(400).json({
         error:
