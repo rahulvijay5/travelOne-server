@@ -50,7 +50,6 @@ async function createDummyData() {
       description: 'Best hotel in the town to experience',
       location: 'maps.google.com/abcd/ijkl',
       address: 'Hindi Village, USA road, 32 inc, India',
-      totalRooms: 5,
       code: 'abcd',
       contactNumber: '9252993222',
       amenities: ['bathtub', 'balcony', 'mountains'],

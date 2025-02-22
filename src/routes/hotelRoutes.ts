@@ -41,10 +41,9 @@ router.use(requireAuth());
  *               - description
  *               - location
  *               - address
- *               - totalRooms
  *               - contactNumber
  *               - owner
- *             properties:
+ *             properties:  
  *               hotelName:
  *                 type: string
  *               description:
@@ -53,8 +52,6 @@ router.use(requireAuth());
  *                 type: string
  *               address:
  *                 type: string
- *               totalRooms:
- *                 type: integer
  *               contactNumber:
  *                 type: string
  *               amenities:

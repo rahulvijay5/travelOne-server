@@ -52,7 +52,6 @@ const options = {
             description: { type: 'string' },
             location: { type: 'string' },
             address: { type: 'string' },
-            totalRooms: { type: 'integer' },
             code: { type: 'string' },
             contactNumber: { type: 'string' },
             amenities: { type: 'array', items: { type: 'string' } },

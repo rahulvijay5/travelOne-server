@@ -81,7 +81,6 @@ model Hotel {
   description   String
   location      String // Google Maps URL
   address       String
-  totalRooms    Int
   code          String @unique
   contactNumber String
 

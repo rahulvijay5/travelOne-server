@@ -15,7 +15,6 @@ export interface CreateHotelData {
   description: string;
   location: string;
   address: string;
-  totalRooms: number;
   code: string;
   contactNumber: string;
   amenities: string[];
@@ -28,7 +27,6 @@ export interface UpdateHotelData {
   description?: string;
   location?: string;
   address?: string;
-  totalRooms?: number;
   contactNumber?: string;
   amenities?: string[];
   hotelImages?: string[];

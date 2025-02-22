@@ -42,26 +42,8 @@ export class UserService {
     console.log("Finding user in db by clerkId:",clerkId);
     const user = await prisma.user.findUnique({
       where: { clerkId: clerkId },
-      include: {
-        bookings: {
-          include: {
-            hotel: {
-              select: {
-                hotelName: true,
-                hotelImages: true,
-                code: true,
-              },
-            },
-          },
-
-          orderBy: {
-            checkIn: "desc",
-          },
-          take: 5,
-        },
-      },
     });
-    console.log("User found");
+    console.log("User found", user);
     return user;
   }
 

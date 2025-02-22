@@ -56,26 +56,55 @@ export class HotelService {
     return prisma.hotel.findUnique({
       where: { id: hotelId },
       include: {
-        owner: true,
-        managers: true,
+        owner: {
+          select: {
+            name: true,
+          },
+        },
+        managers: {
+          select: {
+            name: true,
+          },
+        },
         rules: true,
-        rooms: true,
       },
     });
   }
 
-  async getHotelsByOwnerId(ownerId: string): Promise<Hotel[] | null> {
+  async getHotelsByOwnerId(
+    ownerId: string
+  ): Promise<
+    | {
+        id: string;
+        hotelName: string;
+        hotelImages: string[];
+        address: string;
+        code: string;
+      }[]
+    | null
+  > {
     const hotels = await prisma.user.findUnique({
       where: { id: ownerId },
       include: {
-        ownedHotels: true,
+        ownedHotels: {
+          select: {
+            id: true,
+            hotelName: true,
+            hotelImages: true,
+            address: true,
+            code: true,
+          },
+        },
       },
     });
     if (!hotels) {
       return null;
     }
-    console.log("Hotels fetched with ownedHotels ");
-    return hotels.ownedHotels;
+    console.log("Hotels fetched with ownedHotels ", hotels.ownedHotels);
+    return hotels.ownedHotels.map(hotel => ({
+      ...hotel,
+      hotelImages: [hotel.hotelImages[0]],
+    }));
   }
 
   async updateHotel(hotelId: string, data: UpdateHotelData): Promise<Hotel> {
@@ -131,45 +160,37 @@ export class HotelService {
           select: {
             name: true,
             // email: true,
-          }
+          },
         },
         rules: true,
-        // rooms:{
-        //   select: {
-        //     id: true,
-        //     type: true,
-        //     images: true,
-        //     price: true,
-        //     maxOccupancy: true,
-        //     features: true,
-        //     roomNumber: true,
-        //   }
-        // }
-      }
+      },
     });
   }
 
-  async addManager(hotelId: string, managerId: string): Promise<{ hotel: Hotel; clerkId: string }> {
+  async addManager(
+    hotelId: string,
+    managerId: string
+  ): Promise<{ hotel: Hotel; clerkId: string }> {
     // Check user's current role
     const user = await prisma.user.findUnique({
       where: { id: managerId },
       include: {
-        managedHotels: true
-      }
+        managedHotels: true,
+      },
     });
 
     if (!user) {
-      throw new Error('User not found');
+      throw new Error("User not found");
     }
 
-    if (user.role === 'MANAGER' || user.role === 'OWNER') {
-      throw new Error('User is already a manager or owner');
+    if (user.role === "MANAGER" || user.role === "OWNER") {
+      throw new Error("User is already a manager or owner");
     }
 
     // Update user's role to MANAGER and add them to hotel
     await prisma.user.update({
       where: { id: managerId },
-      data: { role: 'MANAGER' }
+      data: { role: "MANAGER" },
     });
 
     const updatedHotel = await prisma.hotel.update({
@@ -201,7 +222,10 @@ export class HotelService {
     return hotel.managers;
   }
 
-  async removeManager(hotelId: string, managerId: string): Promise<{ hotel: Hotel; clerkId: string | null }> {
+  async removeManager(
+    hotelId: string,
+    managerId: string
+  ): Promise<{ hotel: Hotel; clerkId: string | null }> {
     // First remove the manager from the hotel
     const updatedHotel = await prisma.hotel.update({
       where: { id: hotelId },
@@ -220,15 +244,15 @@ export class HotelService {
     const user = await prisma.user.findUnique({
       where: { id: managerId },
       include: {
-        managedHotels: true
-      }
+        managedHotels: true,
+      },
     });
 
     if (user && user.managedHotels.length === 0) {
       // If they don't manage any other hotels, change role back to CUSTOMER
       await prisma.user.update({
         where: { id: managerId },
-        data: { role: 'CUSTOMER' }
+        data: { role: "CUSTOMER" },
       });
       return { hotel: updatedHotel, clerkId: user.clerkId };
     }
