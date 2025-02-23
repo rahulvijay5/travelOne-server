@@ -121,7 +121,22 @@ export interface CreateUserData {
 
 
 export interface FilteredBookingResponse {
-  data: Booking[];
+  data: {
+    id: string;
+    status: BookingStatus;
+    checkIn: Date;
+    checkOut: Date;
+    guests: number;
+    room: {
+      roomNumber: string;
+    };
+    customer: {
+      name: string;
+    };
+    payment:{
+      totalAmount: number;
+    } | null;
+  }[];
   pagination: {
     total: number;
     pages: number;

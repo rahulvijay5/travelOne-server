@@ -288,7 +288,6 @@ router.get('/:hotelId/:status', getHotelBookingsByStatus);
  */
 router.get('/:bookingId', getBookingById);
 
-
 /**
  * @swagger
  * /api/bookings/{bookingId}:

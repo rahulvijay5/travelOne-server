@@ -518,30 +518,25 @@ export class BookingService {
       prisma.booking.count({ where }),
       prisma.booking.findMany({
         where,
-        include: {
+        select: {
+          id: true,
+          status: true,
+          checkIn: true,
+          checkOut: true,
+          guests: true,
           room: {
             select: {
-              id: true,
               roomNumber: true,
-              type: true,
-              roomStatus: true,
-              price: true,
             },
           },
           customer: {
             select: {
-              id: true,
               name: true,
-              email: true,
-              phoneNumber: true,
             },
           },
           payment: {
             select: {
-              id: true,
-              status: true,
               totalAmount: true,
-              paidAmount: true,
             },
           },
         },
@@ -552,9 +547,12 @@ export class BookingService {
     ]);
 
     const pages = Math.ceil(total / limit);
-
+    console.log("Bookings fetched with bookings ", bookings);
     return {
-      data: bookings,
+      data: bookings.map((booking) => ({
+        ...booking,
+        payment: booking.payment || null,
+      })),
       pagination: {
         total,
         pages,

@@ -107,6 +107,7 @@ export class RoomService {
         roomNumber: true,
       },
     });
+    console.log(rooms);
     return rooms;
   }
 
