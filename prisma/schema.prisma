@@ -51,7 +51,7 @@ model User {
   bookings      Booking[]
   pushTokens    PushToken[]
   notifications Notification[]
-  // feedback      HotelFeedback[]
+  feedback      HotelFeedback[]
 }
 
 model PushToken {
@@ -99,7 +99,7 @@ model Hotel {
   bookings         Booking[]
   notifications    Notification[]
   bookingAnalytics BookingAnalytics[]
-  // feedback         HotelFeedback[]
+  feedback         HotelFeedback[]
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 }
@@ -178,16 +178,16 @@ model Payment {
   updatedAt DateTime @updatedAt
 }
 
-// model HotelFeedback {
-//   id String @id @default(uuid())
-//   userId      String
-//   user        User     @relation(fields: [userId], references: [id])
-//   hotelId     String
-//   hotel       Hotel    @relation(fields: [hotelId], references: [id])
-//   rating      Float
-//   description String?
-//   createdAt   DateTime @default(now())
-// }
+model HotelFeedback {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  hotelId     String
+  hotel       Hotel    @relation(fields: [hotelId], references: [id])
+  rating      Float
+  description String?
+  createdAt   DateTime @default(now())
+}
 
 model BookingAnalytics {
   id                String   @id @default(uuid())

@@ -12,13 +12,16 @@ import {
   updateHotelRules,
   getHotelsByOwnerId,
   getAllManagersOfHotel,
-  getHotelByCode
+  getHotelByCode,
+  addHotelFeedback
 } from '../controllers/hotelController';
 
 const router = express.Router();
 
 // All routes are protected except getHotelByCode
 router.get('/code/:code', getHotelByCode);
+
+router.post('/feedback',addHotelFeedback)
 
 router.use(requireAuth());
 
@@ -362,6 +365,8 @@ router.get('/:hotelId/managers', getAllManagersOfHotel);
  *         description: Hotel not found
  */
 
+
+router.post('/feedback',addHotelFeedback)
 /**
  * @swagger
  * /api/hotels/{hotelId}/managers/{managerId}:

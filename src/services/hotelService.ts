@@ -71,9 +71,7 @@ export class HotelService {
     });
   }
 
-  async getHotelsByOwnerId(
-    ownerId: string
-  ): Promise<
+  async getHotelsByOwnerId(ownerId: string): Promise<
     | {
         id: string;
         hotelName: string;
@@ -101,7 +99,7 @@ export class HotelService {
       return null;
     }
     console.log("Hotels fetched with ownedHotels ", hotels.ownedHotels);
-    return hotels.ownedHotels.map(hotel => ({
+    return hotels.ownedHotels.map((hotel) => ({
       ...hotel,
       hotelImages: [hotel.hotelImages[0]],
     }));
@@ -207,6 +205,40 @@ export class HotelService {
     });
 
     return { hotel: updatedHotel, clerkId: user.clerkId };
+  }
+
+  async addHotelFeedback(feedbackData: {
+    rating: number;
+    userId: string;
+    hotelId: string;
+    description: string | null;
+  }): Promise<boolean> {
+    try {
+      const feedback = await prisma.hotelFeedback.create({
+        data: {
+          description: feedbackData.description,
+          user: {
+            connect: {
+              id: feedbackData.userId,
+            },
+          },
+          hotel: {
+            connect: {
+              id: feedbackData.hotelId,
+            },
+          },
+          rating: feedbackData.rating,
+        },
+      });
+
+      if (feedback) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error(error);
+      return false;
+    }
   }
 
   async getAllManagersOfHotel(hotelId: string): Promise<User[]> {
