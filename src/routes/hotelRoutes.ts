@@ -13,13 +13,16 @@ import {
   getHotelsByOwnerId,
   getAllManagersOfHotel,
   getHotelByCode,
-  addHotelFeedback
+  addHotelFeedback,
+  getHotelAdditionalData
 } from '../controllers/hotelController';
 
 const router = express.Router();
 
 // All routes are protected except getHotelByCode
 router.get('/code/:code', getHotelByCode);
+
+router.get('/code/:code/additional-data',getHotelAdditionalData)
 
 router.post('/feedback',addHotelFeedback)
 

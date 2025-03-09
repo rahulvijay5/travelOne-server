@@ -150,6 +150,30 @@ export const getHotelByCode = async (
   }
 };
 
+export const getHotelAdditionalData = async (
+  req:Request,
+  res:Response
+) : Promise<void> =>{
+  try {
+    const code = req.params.code;
+    if (!code || typeof code !== "string") {
+      res.status(400).json({ error: "Hotel code is required" });
+      return;
+    }
+
+    const hotel = await hotelService.getHotelAdditionalData(code);
+    if (!hotel) {
+      res.status(404).json({ error: "Hotel not found" });
+      return;
+    }
+
+    res.status(200).json(hotel);
+  } catch (error) {
+    console.error("Error fetching hotel:", error);
+    res.status(500).json({ error: "Error fetching hotel" });
+  }
+}
+
 export const addManager = async (
   req: Request,
   res: Response

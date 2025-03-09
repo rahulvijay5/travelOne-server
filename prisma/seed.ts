@@ -183,6 +183,30 @@ async function createDummyData() {
     },
   });
 
+  const feedBack1 = await prisma.hotelFeedback.create({
+    data:{
+      hotelId:hotel.id,
+      userId:user3.id,
+      rating:4,
+      description:'Beautiful hotel'
+    }
+  })
+  const feedBack2 = await prisma.hotelFeedback.create({
+    data:{
+      hotelId:hotel.id,
+      userId:user3.id,
+      rating:2,
+    }
+  })
+  const feedBack3 = await prisma.hotelFeedback.create({
+    data:{
+      hotelId:hotel.id,
+      userId:user3.id,
+      rating:5,
+      description:'Nice place to stay.'
+    }
+  })
+
   console.log('Dummy Data Created Successfully!');
 }
 

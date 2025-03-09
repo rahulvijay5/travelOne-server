@@ -165,6 +165,15 @@ export class HotelService {
     });
   }
 
+  async getHotelAdditionalData(code: string) {
+    return prisma.hotel.findUnique({
+      where: { code },
+      // need to implement further processes in here..!
+      // all the other models are pending still to add in here.
+      // like feedbac, policies and more
+    });
+  }
+
   async addManager(
     hotelId: string,
     managerId: string

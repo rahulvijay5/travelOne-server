@@ -1,10 +1,10 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json && npx prisma generate",
-    "start": "npx prisma db push && node dist/index.js",
+    "start": "npx prisma db push && node dist/src/index.js",
     "dev": "nodemon -r tsconfig-paths/register src/index.ts",
     "seed": "ts-node prisma/seed.ts"
   },
